@@ -1,6 +1,8 @@
 spring:
   application:
     name: peeng
+  config:
+    import: file:.env[.properties]
   datasource:
     url: jdbc:postgresql://localhost:5432/peeng_db
     username: admin
