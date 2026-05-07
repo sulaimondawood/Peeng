@@ -1,10 +1,12 @@
 package com.dawood.peeng.identity.models;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import com.dawood.peeng.common.models.MetaData;
 import com.dawood.peeng.identity.enums.Status;
+import com.dawood.peeng.membership.models.Membership;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,6 +15,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -56,5 +59,8 @@ public class User extends MetaData {
   @Builder.Default
   @Column(nullable = false)
   private Status status = Status.ACTIVE;
+
+  @OneToMany(mappedBy = "user")
+  private List<Membership> memberships;
 
 }
