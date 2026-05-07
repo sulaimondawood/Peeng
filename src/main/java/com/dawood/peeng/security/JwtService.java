@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.auth0.jwt.JWT;
@@ -18,8 +19,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JwtService {
 
+  @Value("${app.security.jwt}")
+  private String secretKey;
+
   private Algorithm algorithm() {
-    return Algorithm.HMAC256("78c1133035814e71f2e31e1497707a3c3cfe2472ec5f44909d8ef37051c29bf9");
+    return Algorithm.HMAC256(secretKey);
   }
 
   public String generateToken(Map<String, String> claims, String sub) {
