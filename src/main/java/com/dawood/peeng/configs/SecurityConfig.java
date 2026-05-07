@@ -33,6 +33,7 @@ public class SecurityConfig {
     return new BCryptPasswordEncoder();
   }
 
+  @Bean
   public UserDetailsService userDetailsService() {
     return new UserDetailsService() {
 
