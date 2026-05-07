@@ -1,3 +1,10 @@
 spring:
   application:
     name: peeng
+  datasource:
+    url: jdbc:postgresql://localhost:5432/peeng_db
+    username: admin
+    password: admin
+  jpa:
+    hibernate:
+      ddl-auto: update
