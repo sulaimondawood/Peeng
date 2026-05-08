@@ -1,10 +1,12 @@
 package com.dawood.peeng.membership.models;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.dawood.peeng.common.models.MetaData;
 import com.dawood.peeng.identity.enums.RoleType;
 import com.dawood.peeng.identity.models.User;
+import com.dawood.peeng.membership.enums.MembershipStatus;
 import com.dawood.peeng.tenant.model.Tenant;
 
 import jakarta.persistence.Column;
@@ -51,5 +53,12 @@ public class Membership extends MetaData {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "tenant_id", nullable = false)
   private Tenant tenant;
+
+  private UUID invitedByUserId;
+
+  private LocalDateTime joinedAt;
+
+  @Enumerated(EnumType.STRING)
+  private MembershipStatus status;
 
 }
