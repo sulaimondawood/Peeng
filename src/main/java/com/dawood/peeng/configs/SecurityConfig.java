@@ -8,7 +8,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import com.dawood.peeng.identity.repository.UserRepository;
 import com.dawood.peeng.security.JwtAuthenticationFilter;
 
 import lombok.RequiredArgsConstructor;
@@ -17,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-  private final UserRepository userRepository;
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
   @Bean
