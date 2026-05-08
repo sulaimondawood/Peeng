@@ -15,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.dawood.peeng.membership.models.Membership;
 import com.dawood.peeng.membership.repository.MembershipRepository;
+import com.dawood.peeng.tenant.context.TenantContext;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -38,37 +39,52 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     String token;
     final String tenantHeader = request.getHeader("X-Tentant-Id");
 
+    if (tenantHeader == null) {
+      return;
+    }
+
     if (authHeader != null || !authHeader.startsWith("Bearer ")) {
       filterChain.doFilter(request, response);
       return;
     }
 
-    token = authHeader.substring(7);
+    try {
 
-    String email = jwtService.extractSubject(token);
+      token = authHeader.substring(7);
 
-    if (email != null && SecurityContextHolder.getContext()
-        .getAuthentication() == null) {
+      String email = jwtService.extractSubject(token);
 
-      UserDetails user = userDetailsService.loadUserByUsername(email);
+      if (email != null && SecurityContextHolder.getContext()
+          .getAuthentication() == null) {
 
-      UUID tenantId = UUID.fromString(tenantHeader);
+        UserDetails user = userDetailsService.loadUserByUsername(email);
 
-      Membership membership = membershipRepository
-          .findByUser_EmailAndTenant_Id(user.getUsername(), tenantId)
-          .orElseThrow(() -> new RuntimeException(
-              "Membership not found"));
+        UUID tenantId = UUID.fromString(tenantHeader);
 
-      String role = "ROLE_" + membership.getRole().name();
+        Membership membership = membershipRepository
+            .findByUser_EmailAndTenant_Id(user.getUsername(), tenantId)
+            .orElseThrow(() -> new RuntimeException(
+                "Membership not found"));
 
-      UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(user, null,
-          List.of(new SimpleGrantedAuthority(role)));
+        String role = "ROLE_" + membership.getRole().name();
 
-      authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(user, null,
+            List.of(new SimpleGrantedAuthority(role)));
 
-      SecurityContextHolder.getContext().setAuthentication(authToken);
+        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-      filterChain.doFilter(request, response);
+        SecurityContextHolder.getContext().setAuthentication(authToken);
+
+        TenantContext.set(tenantId);
+
+        filterChain.doFilter(request, response);
+
+      }
+
+    } catch (Exception e) {
+
+    } finally {
+      TenantContext.clear();
 
     }
 
