@@ -8,6 +8,7 @@ import com.dawood.peeng.subscriptions.enums.SubscriptionPlan;
 import com.dawood.peeng.subscriptions.enums.SubscriptionStatus;
 import com.dawood.peeng.tenant.model.Tenant;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -34,7 +35,7 @@ public class Subscription extends MetaData {
   private UUID id;
 
   @OneToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "tenant_id")
+  @JoinColumn(name = "tenant_id", nullable = false)
   private Tenant tenant;
 
   private String providerCustomerId;
@@ -47,10 +48,20 @@ public class Subscription extends MetaData {
   @Enumerated(EnumType.STRING)
   private SubscriptionStatus status;
 
+  private LocalDateTime trialStartsAt;
+
+  private LocalDateTime trialEndsAt;
+
   private LocalDateTime currentPeriodStart;
 
   private LocalDateTime currentPeriodEnd;
 
-  private boolean cancelAtPeriodEnd;
+  @Column(nullable = false)
+  @Builder.Default
+  private boolean cancelAtPeriodEnd = false;
+
+  private LocalDateTime endedAt;
+
+  private LocalDateTime lastPaymentFailureAt;
 
 }
