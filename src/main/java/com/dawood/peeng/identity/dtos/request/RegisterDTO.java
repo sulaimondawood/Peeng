@@ -1,4 +1,4 @@
-package com.dawood.peeng.identity.dtos;
+package com.dawood.peeng.identity.dtos.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -17,4 +17,5 @@ public class RegisterDTO {
   @NotBlank(message = "Name is required")
   private String name;
 
+  private String workspaceName;
 }
