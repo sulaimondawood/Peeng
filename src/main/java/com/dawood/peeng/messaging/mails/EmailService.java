@@ -2,6 +2,7 @@ package com.dawood.peeng.messaging.mails;
 
 import java.io.UnsupportedEncodingException;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,9 @@ public class EmailService {
 
   private final JavaMailSender javaMailSender;
 
+  @Value("${app.email}")
+  private String from;
+
   public void send(String to, String subject, String body) {
 
     try {
@@ -26,7 +30,7 @@ public class EmailService {
 
       MimeMessageHelper helper = new MimeMessageHelper(mimeMessage);
 
-      helper.setFrom("sulaimond@gmail.com", "Peeng");
+      helper.setFrom(from, "Peeng");
       helper.setTo(to);
       helper.setSubject(subject);
       helper.setText(body, true);
