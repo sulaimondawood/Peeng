@@ -1,20 +1,19 @@
 package com.dawood.peeng.identity.service;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import com.dawood.peeng.configs.RabbitMQConfig;
 import com.dawood.peeng.identity.dtos.request.RegisterDTO;
-import com.dawood.peeng.identity.dtos.response.IdentityDTO;
+import com.dawood.peeng.identity.dtos.response.RegisterResponseDTO;
 import com.dawood.peeng.identity.enums.RoleType;
 import com.dawood.peeng.identity.exceptions.EmailAlreadyExistsException;
-import com.dawood.peeng.identity.mapper.IdentityMapper;
+import com.dawood.peeng.identity.models.EmailVerificationToken;
 import com.dawood.peeng.identity.models.User;
 import com.dawood.peeng.identity.repository.UserRepository;
 import com.dawood.peeng.membership.enums.MembershipStatus;
@@ -39,7 +38,7 @@ public class IdentityService {
   private final EmailProducer emailProducer;
 
   @Transactional
-  public void register(RegisterDTO payload) {
+  public RegisterResponseDTO register(RegisterDTO payload) {
 
     if (userRepository.existsByEmailAllIgnoreCase(payload.getEmail())) {
       throw new EmailAlreadyExistsException("Email address already exists");
@@ -53,11 +52,16 @@ public class IdentityService {
 
     User savedUser = userRepository.save(newUser);
 
+    EmailVerificationToken token = EmailVerificationToken.builder()
+        .token(UUID.randomUUID().toString())
+        .user(savedUser)
+        .expiresAt(LocalDateTime.now().plusMinutes(15))
+        .build();
+
     Tenant newTenant = Tenant.builder()
         .workspaceName(payload.getWorkspaceName())
         .slug(SlugUtils.makeUniqueSlug(payload.getWorkspaceName()))
-        .owner(newUser)
-        .settings("")
+        .owner(savedUser)
         .build();
 
     tenantRepository.save(newTenant);
@@ -72,12 +76,10 @@ public class IdentityService {
 
     membershipRepository.save(newMembership);
 
-    IdentityDTO identity = IdentityMapper.toDTO(savedUser);
-
     SendVerificationEmailEvent event = SendVerificationEmailEvent.builder()
         .email(savedUser.getEmail())
         .name(savedUser.getName())
-        .token(savedUser.getToken().getToken())
+        .token(token.getToken())
         .build();
 
     TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -86,6 +88,11 @@ public class IdentityService {
         emailProducer.sendVerificationEmail(event);
       }
     });
+
+    return RegisterResponseDTO.builder()
+        .email(savedUser.getEmail())
+        .requiresEmailVerification(true)
+        .build();
 
   }
 
