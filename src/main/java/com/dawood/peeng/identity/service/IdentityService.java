@@ -15,6 +15,7 @@ import com.dawood.peeng.identity.enums.RoleType;
 import com.dawood.peeng.identity.exceptions.EmailAlreadyExistsException;
 import com.dawood.peeng.identity.models.EmailVerificationToken;
 import com.dawood.peeng.identity.models.User;
+import com.dawood.peeng.identity.repository.EmailVerificationTokenRepository;
 import com.dawood.peeng.identity.repository.UserRepository;
 import com.dawood.peeng.membership.enums.MembershipStatus;
 import com.dawood.peeng.membership.models.Membership;
@@ -36,16 +37,19 @@ public class IdentityService {
   private final MembershipRepository membershipRepository;
   private final TenantRepository tenantRepository;
   private final EmailProducer emailProducer;
+  private final EmailVerificationTokenRepository tokenRepository;
 
   @Transactional
   public RegisterResponseDTO register(RegisterDTO payload) {
 
-    if (userRepository.existsByEmailAllIgnoreCase(payload.getEmail())) {
+    String normailizedEmail = payload.getEmail().trim().toLowerCase();
+
+    if (userRepository.existsByEmailIgnoreCase(normailizedEmail)) {
       throw new EmailAlreadyExistsException("Email address already exists");
     }
 
     User newUser = User.builder()
-        .email(payload.getEmail())
+        .email(normailizedEmail)
         .passwordHash(passwordEncoder.encode(payload.getPassword()))
         .name(payload.getName())
         .build();
@@ -55,8 +59,10 @@ public class IdentityService {
     EmailVerificationToken token = EmailVerificationToken.builder()
         .token(UUID.randomUUID().toString())
         .user(savedUser)
-        .expiresAt(LocalDateTime.now().plusMinutes(15))
+        .expiresAt(LocalDateTime.now().plusHours(24))
         .build();
+
+    tokenRepository.save(token);
 
     Tenant newTenant = Tenant.builder()
         .workspaceName(payload.getWorkspaceName())
@@ -67,7 +73,7 @@ public class IdentityService {
     tenantRepository.save(newTenant);
 
     Membership newMembership = Membership.builder()
-        .user(newUser)
+        .user(savedUser)
         .role(RoleType.OWNER)
         .tenant(newTenant)
         .joinedAt(LocalDateTime.now())
@@ -82,16 +88,21 @@ public class IdentityService {
         .token(token.getToken())
         .build();
 
-    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-      @Override
-      public void afterCommit() {
-        emailProducer.sendVerificationEmail(event);
-      }
-    });
+    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+
+      TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+        @Override
+        public void afterCommit() {
+          emailProducer.sendVerificationEmail(event);
+        }
+      });
+    }
 
     return RegisterResponseDTO.builder()
         .email(savedUser.getEmail())
         .requiresEmailVerification(true)
+        .message(
+            "Registration successful. Please verify your email.")
         .build();
 
   }

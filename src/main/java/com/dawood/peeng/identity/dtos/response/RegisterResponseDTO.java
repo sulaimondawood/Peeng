@@ -10,6 +10,8 @@ import lombok.Setter;
 @Builder
 public class RegisterResponseDTO {
 
+  private String message;
+
   private String email;
 
   private boolean requiresEmailVerification;

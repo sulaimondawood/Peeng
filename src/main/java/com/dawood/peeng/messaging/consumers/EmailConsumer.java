@@ -34,7 +34,7 @@ public class EmailConsumer {
 
       Context context = new Context();
       context.setVariable("name", event.getName());
-      context.setVariable("expiresIn", "15mins");
+      context.setVariable("expiresIn", "24hrs");
       context.setVariable("activationLink", activationLink);
 
       String body = templateEngine.process("email-verification", context);
