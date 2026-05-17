@@ -2,10 +2,14 @@ package com.dawood.peeng.identity.service;
 
 import java.time.LocalDateTime;
 
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import com.dawood.peeng.configs.RabbitMQConfig;
 import com.dawood.peeng.identity.dtos.request.RegisterDTO;
 import com.dawood.peeng.identity.enums.RoleType;
 import com.dawood.peeng.identity.exceptions.EmailAlreadyExistsException;
@@ -28,6 +32,7 @@ public class IdentityService {
   private final PasswordEncoder passwordEncoder;
   private final MembershipRepository membershipRepository;
   private final TenantRepository tenantRepository;
+  private final RabbitTemplate rabbitTemplate;
 
   @Transactional
   public void register(RegisterDTO payload) {
@@ -62,6 +67,13 @@ public class IdentityService {
         .build();
 
     membershipRepository.save(newMembership);
+
+    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+      @Override
+      public void afterCommit() {
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.EMAIL_ROUTING_KEY, null);
+      }
+    });
 
   }
 
