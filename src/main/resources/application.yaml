@@ -32,3 +32,4 @@ app:
   security:
     jwt: ${JWT_SECRET}
   email: ${MAIL_USER_DEV}
+  client-url: ${CLIENT_URL}
