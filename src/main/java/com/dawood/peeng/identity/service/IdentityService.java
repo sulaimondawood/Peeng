@@ -11,8 +11,10 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import com.dawood.peeng.configs.RabbitMQConfig;
 import com.dawood.peeng.identity.dtos.request.RegisterDTO;
+import com.dawood.peeng.identity.dtos.response.IdentityDTO;
 import com.dawood.peeng.identity.enums.RoleType;
 import com.dawood.peeng.identity.exceptions.EmailAlreadyExistsException;
+import com.dawood.peeng.identity.mapper.IdentityMapper;
 import com.dawood.peeng.identity.models.User;
 import com.dawood.peeng.identity.repository.UserRepository;
 import com.dawood.peeng.membership.enums.MembershipStatus;
@@ -47,7 +49,7 @@ public class IdentityService {
         .name(payload.getName())
         .build();
 
-    userRepository.save(newUser);
+    User savedUser = userRepository.save(newUser);
 
     Tenant newTenant = Tenant.builder()
         .workspaceName(payload.getWorkspaceName())
@@ -68,10 +70,12 @@ public class IdentityService {
 
     membershipRepository.save(newMembership);
 
+    IdentityDTO identity = IdentityMapper.toDTO(savedUser);
+
     TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
       @Override
       public void afterCommit() {
-        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.EMAIL_ROUTING_KEY, null);
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.EMAIL_ROUTING_KEY, identity);
       }
     });
 

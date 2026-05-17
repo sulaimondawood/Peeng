@@ -20,7 +20,7 @@ public class IdentityDTO {
 
   private String email;
 
-  private boolean emailVerified = false;
+  private boolean emailVerified;
 
   private String name;
 
