@@ -20,6 +20,8 @@ import com.dawood.peeng.identity.repository.UserRepository;
 import com.dawood.peeng.membership.enums.MembershipStatus;
 import com.dawood.peeng.membership.models.Membership;
 import com.dawood.peeng.membership.repository.MembershipRepository;
+import com.dawood.peeng.messaging.events.SendVerificationEmailEvent;
+import com.dawood.peeng.messaging.producers.EmailProducer;
 import com.dawood.peeng.tenant.model.Tenant;
 import com.dawood.peeng.tenant.repository.TenantRepository;
 import com.dawood.peeng.utils.SlugUtils;
@@ -34,7 +36,7 @@ public class IdentityService {
   private final PasswordEncoder passwordEncoder;
   private final MembershipRepository membershipRepository;
   private final TenantRepository tenantRepository;
-  private final RabbitTemplate rabbitTemplate;
+  private final EmailProducer emailProducer;
 
   @Transactional
   public void register(RegisterDTO payload) {
@@ -72,10 +74,16 @@ public class IdentityService {
 
     IdentityDTO identity = IdentityMapper.toDTO(savedUser);
 
+    SendVerificationEmailEvent event = SendVerificationEmailEvent.builder()
+        .email(savedUser.getEmail())
+        .name(savedUser.getName())
+        .token(savedUser.getToken().getToken())
+        .build();
+
     TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
       @Override
       public void afterCommit() {
-        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.EMAIL_ROUTING_KEY, identity);
+        emailProducer.sendVerificationEmail(event);
       }
     });
 
