@@ -66,8 +66,7 @@ public class User extends MetaData {
   @OneToMany(mappedBy = "user")
   private List<Membership> memberships;
 
-  @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)
-  private List<Tenant> ownedTenants;
+  private UUID lastActiveTenantId;
 
   @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
   private EmailVerificationToken token;

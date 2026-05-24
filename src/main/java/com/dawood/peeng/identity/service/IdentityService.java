@@ -1,6 +1,7 @@
 package com.dawood.peeng.identity.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,7 @@ import com.dawood.peeng.identity.dtos.request.LoginDTO;
 import com.dawood.peeng.identity.dtos.request.RegisterDTO;
 import com.dawood.peeng.identity.dtos.response.LoginResponseDTO;
 import com.dawood.peeng.identity.dtos.response.RegisterResponseDTO;
+import com.dawood.peeng.identity.dtos.response.UserSessionDTO;
 import com.dawood.peeng.identity.enums.RoleType;
 import com.dawood.peeng.identity.enums.Status;
 import com.dawood.peeng.identity.exceptions.AccountSuspendedException;
@@ -25,7 +27,9 @@ import com.dawood.peeng.identity.models.EmailVerificationToken;
 import com.dawood.peeng.identity.models.User;
 import com.dawood.peeng.identity.repository.EmailVerificationTokenRepository;
 import com.dawood.peeng.identity.repository.UserRepository;
+import com.dawood.peeng.membership.dtos.responses.MembershipSessionDTO;
 import com.dawood.peeng.membership.enums.MembershipStatus;
+import com.dawood.peeng.membership.exceptions.MembershipException;
 import com.dawood.peeng.membership.models.Membership;
 import com.dawood.peeng.membership.repository.MembershipRepository;
 import com.dawood.peeng.messaging.events.SendVerificationEmailEvent;
@@ -124,6 +128,11 @@ public class IdentityService {
             ErrorCode.BAD_REQUEST));
 
     if (!passwordEncoder.matches(payload.getPassword(), user.getPasswordHash())) {
+
+      user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
+
+      userRepository.save(user);
+
       throw new InvalidCredentialsException("Username or password is incorrect", HttpStatus.BAD_REQUEST,
           ErrorCode.BAD_REQUEST);
     }
@@ -138,6 +147,50 @@ public class IdentityService {
           HttpStatus.CONFLICT,
           null);
     }
+
+    List<Membership> memberships = membershipRepository.findAllByUser_Id(user.getId());
+
+    if (memberships.isEmpty()) {
+      throw new MembershipException("User has no memberships", HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
+    }
+
+    UUID lastActiveTenantId = user.getLastActiveTenantId();
+
+    if (lastActiveTenantId == null) {
+      Membership firstMembership = memberships.get(0);
+      user.setLastActiveTenantId(firstMembership.getTenant().getId());
+
+      userRepository.save(user);
+    }
+
+    user.setLastLoginAt(LocalDateTime.now());
+
+    List<MembershipSessionDTO> membershipDTOs = memberships.stream()
+        .map(membership -> MembershipSessionDTO
+            .builder()
+            .tenantId(
+                membership
+                    .getTenant()
+                    .getId())
+            .workspaceName(
+                membership
+                    .getTenant()
+                    .getWorkspaceName())
+            .role(
+                membership
+                    .getRole())
+            .build())
+        .toList();
+
+    LoginResponseDTO response = new LoginResponseDTO();
+    response.setAccessToken("");
+    response.setCurrentTenant(null);
+    response.setMemberships(null);
+    response.setUser(UserSessionDTO.builder()
+        .avatarUrl(user.getAvatarUrl())
+        .email(user.getEmail())
+        .emailVerified(user.isEmailVerified())
+        .name(user.getName()).build());
 
     return null;
 
