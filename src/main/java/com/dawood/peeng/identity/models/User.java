@@ -58,6 +58,8 @@ public class User extends MetaData {
 
   private int failedLoginAttempts;
 
+  private LocalDateTime lastFailedLoginAt;
+
   @Enumerated(EnumType.STRING)
   @Builder.Default
   @Column(nullable = false)

@@ -41,6 +41,7 @@ import com.dawood.peeng.messaging.producers.EmailProducer;
 import com.dawood.peeng.security.JwtService;
 import com.dawood.peeng.tenant.dtos.response.TenantSessionDTO;
 import com.dawood.peeng.tenant.enums.TenantStatus;
+import com.dawood.peeng.tenant.exceptions.WorkspaceSuspendedException;
 import com.dawood.peeng.tenant.model.Tenant;
 import com.dawood.peeng.tenant.repository.TenantRepository;
 import com.dawood.peeng.utils.SlugUtils;
@@ -193,7 +194,15 @@ public class IdentityService {
       throw new EmailNotVerifiedException("Email is not verified", HttpStatus.CONFLICT, null);
     }
 
-    List<Membership> memberships = membershipRepository.findAllByUser_Id(user.getId());
+    // List<Membership> memberships =
+    // membershipRepository.findAllByUser_Id(user.getId());
+
+    List<Membership> memberships = membershipRepository
+        .findAllByUser_Id(user.getId())
+        .stream()
+        .filter(m -> m.getStatus() == MembershipStatus.ACTIVE)
+        .filter(m -> m.getTenant().getStatus() == TenantStatus.ACTIVE)
+        .toList();
 
     if (memberships.isEmpty()) {
       throw new MembershipException("User has no memberships", HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
@@ -226,6 +235,17 @@ public class IdentityService {
     if (!membership.getStatus().equals(MembershipStatus.ACTIVE)) {
       throw new MembershipException("You no longer have access to this workspace", HttpStatus.BAD_REQUEST,
           ErrorCode.BAD_REQUEST);
+    }
+
+    Tenant tenant = membership.getTenant();
+
+    if (tenant.getStatus() != TenantStatus.ACTIVE && tenant.getStatus() != TenantStatus.PAST_DUE
+        && tenant.getStatus() != TenantStatus.TRIALING) {
+
+      throw new WorkspaceSuspendedException(
+          "Workspace is unavailable",
+          HttpStatus.CONFLICT,
+          ErrorCode.WORKSPACE_SUSPENDED);
     }
 
     user.setLastLoginAt(LocalDateTime.now());
