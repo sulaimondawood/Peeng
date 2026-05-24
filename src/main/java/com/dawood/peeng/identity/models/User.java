@@ -68,6 +68,8 @@ public class User extends MetaData {
 
   private UUID lastActiveTenantId;
 
+  private LocalDateTime accountLockedUntil;
+
   @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
   private EmailVerificationToken token;
 

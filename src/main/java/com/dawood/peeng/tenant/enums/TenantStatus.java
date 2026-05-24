@@ -5,5 +5,5 @@ public enum TenantStatus {
   TRIALING,
   PAST_DUE,
   SUSPENDED,
-  CANCELLED
+  CANCELLED,
 }

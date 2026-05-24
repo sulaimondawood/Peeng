@@ -21,6 +21,7 @@ import com.dawood.peeng.identity.dtos.response.RegisterResponseDTO;
 import com.dawood.peeng.identity.dtos.response.UserSessionDTO;
 import com.dawood.peeng.identity.enums.RoleType;
 import com.dawood.peeng.identity.enums.Status;
+import com.dawood.peeng.identity.exceptions.AccountLockedException;
 import com.dawood.peeng.identity.exceptions.AccountSuspendedException;
 import com.dawood.peeng.identity.exceptions.EmailAlreadyExistsException;
 import com.dawood.peeng.identity.exceptions.EmailNotVerifiedException;
@@ -39,6 +40,7 @@ import com.dawood.peeng.messaging.events.SendVerificationEmailEvent;
 import com.dawood.peeng.messaging.producers.EmailProducer;
 import com.dawood.peeng.security.JwtService;
 import com.dawood.peeng.tenant.dtos.response.TenantSessionDTO;
+import com.dawood.peeng.tenant.enums.TenantStatus;
 import com.dawood.peeng.tenant.model.Tenant;
 import com.dawood.peeng.tenant.repository.TenantRepository;
 import com.dawood.peeng.utils.SlugUtils;
@@ -133,9 +135,49 @@ public class IdentityService {
         .orElseThrow(() -> new InvalidCredentialsException("Username or password is incorrect", HttpStatus.BAD_REQUEST,
             ErrorCode.BAD_REQUEST));
 
+    if (user.getStatus() == Status.SUSPENDED) {
+      throw new AccountSuspendedException(
+          "Your account was suspended",
+          HttpStatus.CONFLICT,
+          null);
+    }
+
+    if (user.getStatus() == Status.DELETED) {
+      throw new InvalidCredentialsException(
+          "Username or password is incorrect",
+          HttpStatus.BAD_REQUEST,
+          ErrorCode.BAD_REQUEST);
+    }
+
+    if (user.getStatus().equals(Status.LOCKED) && user.getAccountLockedUntil() != null) {
+      if (user.getAccountLockedUntil().isAfter(LocalDateTime.now())) {
+        throw new AccountLockedException(
+            "Your account is temporarily locked",
+            HttpStatus.CONFLICT,
+            ErrorCode.ACCOUNT_LOCKED);
+      }
+
+      user.setStatus(Status.ACTIVE);
+      user.setFailedLoginAttempts(0);
+      user.setAccountLockedUntil(null);
+
+      userRepository.save(user);
+
+    }
+
     if (!passwordEncoder.matches(payload.getPassword(), user.getPasswordHash())) {
 
-      user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
+      int attempts = user.getFailedLoginAttempts() + 1;
+
+      user.setFailedLoginAttempts(attempts);
+
+      if (attempts >= 5) {
+        user.setStatus(Status.LOCKED);
+        user.setAccountLockedUntil(LocalDateTime.now().plusMinutes(30));
+
+        userRepository.save(user);
+        throw new AccountLockedException("Your account is temporarily locked", null, null);
+      }
 
       userRepository.save(user);
 
@@ -144,17 +186,11 @@ public class IdentityService {
     }
 
     user.setFailedLoginAttempts(0);
+    user.setAccountLockedUntil(null);
     userRepository.save(user);
 
     if (!user.isEmailVerified()) {
       throw new EmailNotVerifiedException("Email is not verified", HttpStatus.CONFLICT, null);
-    }
-
-    if (user.getStatus() == Status.SUSPENDED) {
-      throw new AccountSuspendedException(
-          "Your account was suspended",
-          HttpStatus.CONFLICT,
-          null);
     }
 
     List<Membership> memberships = membershipRepository.findAllByUser_Id(user.getId());
@@ -165,13 +201,14 @@ public class IdentityService {
 
     UUID lastActiveTenantId = user.getLastActiveTenantId();
     String role;
+    Membership membership;
 
     if (lastActiveTenantId == null) {
-      Membership firstMembership = memberships.get(0);
+      membership = memberships.get(0);
 
-      role = firstMembership.getRole().name();
+      role = membership.getRole().name();
 
-      lastActiveTenantId = firstMembership.getTenant().getId();
+      lastActiveTenantId = membership.getTenant().getId();
 
       user.setLastActiveTenantId(lastActiveTenantId);
 
@@ -179,19 +216,24 @@ public class IdentityService {
 
     } else {
 
-      Membership membership = membershipRepository.findByUser_IdAndTenant_Id(user.getId(), lastActiveTenantId)
+      membership = membershipRepository.findByUser_IdAndTenant_Id(user.getId(), lastActiveTenantId)
           .orElseThrow(() -> new InvalidCredentialsException("User is not a member of the workspace",
               HttpStatus.BAD_REQUEST, null));
 
       role = membership.getRole().name();
     }
 
+    if (!membership.getStatus().equals(MembershipStatus.ACTIVE)) {
+      throw new MembershipException("You no longer have access to this workspace", HttpStatus.BAD_REQUEST,
+          ErrorCode.BAD_REQUEST);
+    }
+
     user.setLastLoginAt(LocalDateTime.now());
     userRepository.save(user);
 
     Map<String, String> claims = new HashMap<>();
-    claims.put("tenantID", lastActiveTenantId.toString());
-    claims.put(role, role);
+    claims.put("tenantId", lastActiveTenantId.toString());
+    claims.put("role", role);
 
     String accessToken = jwtService.generateToken(claims, normalizedEmail);
 
