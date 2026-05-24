@@ -39,7 +39,6 @@ import com.dawood.peeng.membership.repository.MembershipRepository;
 import com.dawood.peeng.messaging.events.SendVerificationEmailEvent;
 import com.dawood.peeng.messaging.producers.EmailProducer;
 import com.dawood.peeng.security.JwtService;
-import com.dawood.peeng.tenant.dtos.response.TenantSessionDTO;
 import com.dawood.peeng.tenant.enums.TenantStatus;
 import com.dawood.peeng.tenant.exceptions.WorkspaceSuspendedException;
 import com.dawood.peeng.tenant.model.Tenant;
@@ -128,6 +127,7 @@ public class IdentityService {
 
   }
 
+  @Transactional
   public LoginResponseDTO login(LoginDTO payload) {
 
     String normalizedEmail = payload.getEmail().trim();
@@ -171,6 +171,8 @@ public class IdentityService {
       int attempts = user.getFailedLoginAttempts() + 1;
 
       user.setFailedLoginAttempts(attempts);
+      user.setLastFailedLoginAt(
+          LocalDateTime.now());
 
       if (attempts >= 5) {
         user.setStatus(Status.LOCKED);
