@@ -22,9 +22,11 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtService jwtService;
@@ -37,13 +39,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     final String authHeader = request.getHeader("Authorization");
     String token;
-    final String tenantHeader = request.getHeader("X-Tentant-Id");
+    final String tenantHeader = request.getHeader("X-Tenant-Id");
 
     if (tenantHeader == null) {
+      log.info("Tenant Id is missing");
       return;
     }
 
-    if (authHeader != null || !authHeader.startsWith("Bearer ")) {
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+      log.info("Invalid auth header");
       filterChain.doFilter(request, response);
       return;
     }
@@ -90,4 +94,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   }
 
+  @Override
+  protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+    String path = request.getServletPath();
+    return path.startsWith("/auth");
+  }
 }
