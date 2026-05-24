@@ -16,5 +16,7 @@ public class MembershipSessionDTO {
 
   private String workspaceName;
 
+  private String slug;
+
   private RoleType role;
 }

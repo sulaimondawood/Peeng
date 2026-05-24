@@ -1,7 +1,9 @@
 package com.dawood.peeng.identity.service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -30,10 +32,13 @@ import com.dawood.peeng.identity.repository.UserRepository;
 import com.dawood.peeng.membership.dtos.responses.MembershipSessionDTO;
 import com.dawood.peeng.membership.enums.MembershipStatus;
 import com.dawood.peeng.membership.exceptions.MembershipException;
+import com.dawood.peeng.membership.mapper.MembershipMapper;
 import com.dawood.peeng.membership.models.Membership;
 import com.dawood.peeng.membership.repository.MembershipRepository;
 import com.dawood.peeng.messaging.events.SendVerificationEmailEvent;
 import com.dawood.peeng.messaging.producers.EmailProducer;
+import com.dawood.peeng.security.JwtService;
+import com.dawood.peeng.tenant.dtos.response.TenantSessionDTO;
 import com.dawood.peeng.tenant.model.Tenant;
 import com.dawood.peeng.tenant.repository.TenantRepository;
 import com.dawood.peeng.utils.SlugUtils;
@@ -50,6 +55,7 @@ public class IdentityService {
   private final TenantRepository tenantRepository;
   private final EmailProducer emailProducer;
   private final EmailVerificationTokenRepository tokenRepository;
+  private final JwtService jwtService;
 
   @Transactional
   public RegisterResponseDTO register(RegisterDTO payload) {
@@ -137,6 +143,9 @@ public class IdentityService {
           ErrorCode.BAD_REQUEST);
     }
 
+    user.setFailedLoginAttempts(0);
+    userRepository.save(user);
+
     if (!user.isEmailVerified()) {
       throw new EmailNotVerifiedException("Email is not verified", HttpStatus.CONFLICT, null);
     }
@@ -155,44 +164,50 @@ public class IdentityService {
     }
 
     UUID lastActiveTenantId = user.getLastActiveTenantId();
+    String role;
 
     if (lastActiveTenantId == null) {
       Membership firstMembership = memberships.get(0);
-      user.setLastActiveTenantId(firstMembership.getTenant().getId());
+
+      role = firstMembership.getRole().name();
+
+      lastActiveTenantId = firstMembership.getTenant().getId();
+
+      user.setLastActiveTenantId(lastActiveTenantId);
 
       userRepository.save(user);
+
+    } else {
+
+      Membership membership = membershipRepository.findByUser_IdAndTenant_Id(user.getId(), lastActiveTenantId)
+          .orElseThrow(() -> new InvalidCredentialsException("User is not a member of the workspace",
+              HttpStatus.BAD_REQUEST, null));
+
+      role = membership.getRole().name();
     }
 
     user.setLastLoginAt(LocalDateTime.now());
+    userRepository.save(user);
+
+    Map<String, String> claims = new HashMap<>();
+    claims.put("tenantID", lastActiveTenantId.toString());
+    claims.put(role, role);
+
+    String accessToken = jwtService.generateToken(claims, normalizedEmail);
 
     List<MembershipSessionDTO> membershipDTOs = memberships.stream()
-        .map(membership -> MembershipSessionDTO
-            .builder()
-            .tenantId(
-                membership
-                    .getTenant()
-                    .getId())
-            .workspaceName(
-                membership
-                    .getTenant()
-                    .getWorkspaceName())
-            .role(
-                membership
-                    .getRole())
-            .build())
-        .toList();
+        .map(MembershipMapper::toSessionDTO).toList();
 
     LoginResponseDTO response = new LoginResponseDTO();
-    response.setAccessToken("");
-    response.setCurrentTenant(null);
-    response.setMemberships(null);
+    response.setAccessToken(accessToken);
+    response.setMemberships(membershipDTOs);
     response.setUser(UserSessionDTO.builder()
         .avatarUrl(user.getAvatarUrl())
         .email(user.getEmail())
         .emailVerified(user.isEmailVerified())
         .name(user.getName()).build());
 
-    return null;
+    return response;
 
   }
 }

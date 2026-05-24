@@ -13,5 +13,9 @@ public interface MembershipRepository extends JpaRepository<Membership, UUID> {
       String email,
       UUID tenantId);
 
+  Optional<Membership> findByUser_IdAndTenant_Id(
+      UUID id,
+      UUID tenantId);
+
   List<Membership> findAllByUser_Id(UUID userId);
 }
