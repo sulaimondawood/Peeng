@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,6 +14,10 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.dawood.peeng.common.ResponseBuilder;
+import com.dawood.peeng.common.dto.ApiError;
 import com.dawood.peeng.membership.models.Membership;
 import com.dawood.peeng.membership.repository.MembershipRepository;
 import com.dawood.peeng.tenant.context.TenantContext;
@@ -23,6 +28,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 @RequiredArgsConstructor
@@ -40,9 +46,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     final String authHeader = request.getHeader("Authorization");
     String token;
     final String tenantHeader = request.getHeader("X-Tenant-Id");
+    final ObjectMapper mapper = new ObjectMapper();
 
     if (tenantHeader == null) {
       log.info("Tenant Id is missing");
+
+      ApiError err = ResponseBuilder.buildError(request, response, "Missing or invalid X-Tenant-Id header",
+          HttpStatus.BAD_REQUEST, "Bad Request");
+
+      response.setStatus(HttpStatus.BAD_REQUEST.value());
+      response.setContentType("application/json");
+      response.getWriter().write(mapper.writeValueAsString(err));
+
       return;
     }
 
@@ -85,8 +100,53 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
       }
 
-    } catch (Exception e) {
+    } catch (TokenExpiredException e) {
+      log.error(e.getMessage(), e);
 
+      ApiError err = ResponseBuilder.buildError(
+          request,
+          response,
+          "Authorization token expired",
+          HttpStatus.UNAUTHORIZED,
+          "Unauthorized");
+
+      response.setStatus(HttpStatus.BAD_REQUEST.value());
+      response.setContentType("application/json");
+      response.getWriter().write(mapper.writeValueAsString(err));
+
+      return;
+
+    } catch (JWTVerificationException e) {
+      log.error(e.getMessage(), e);
+
+      ApiError err = ResponseBuilder.buildError(
+          request,
+          response,
+          "Invalid authorization token",
+          HttpStatus.UNAUTHORIZED,
+          "Unauthorized");
+
+      response.setStatus(HttpStatus.BAD_REQUEST.value());
+      response.setContentType("application/json");
+      response.getWriter().write(mapper.writeValueAsString(err));
+
+      return;
+
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+
+      ApiError err = ResponseBuilder.buildError(
+          request,
+          response,
+          "Something went wrong",
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          "Internal Server Error");
+
+      response.setStatus(HttpStatus.BAD_REQUEST.value());
+      response.setContentType("application/json");
+      response.getWriter().write(mapper.writeValueAsString(err));
+
+      return;
     } finally {
       TenantContext.clear();
 
