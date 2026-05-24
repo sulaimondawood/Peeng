@@ -1,5 +1,6 @@
 package com.dawood.peeng.membership.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -11,4 +12,6 @@ public interface MembershipRepository extends JpaRepository<Membership, UUID> {
   Optional<Membership> findByUser_EmailAndTenant_Id(
       String email,
       UUID tenantId);
+
+  List<Membership> findAllByUser_Id(UUID userId);
 }

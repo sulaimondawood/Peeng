@@ -3,16 +3,24 @@ package com.dawood.peeng.identity.service;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import com.dawood.peeng.common.enums.ErrorCode;
+import com.dawood.peeng.identity.dtos.request.LoginDTO;
 import com.dawood.peeng.identity.dtos.request.RegisterDTO;
+import com.dawood.peeng.identity.dtos.response.LoginResponseDTO;
 import com.dawood.peeng.identity.dtos.response.RegisterResponseDTO;
 import com.dawood.peeng.identity.enums.RoleType;
+import com.dawood.peeng.identity.enums.Status;
+import com.dawood.peeng.identity.exceptions.AccountSuspendedException;
 import com.dawood.peeng.identity.exceptions.EmailAlreadyExistsException;
+import com.dawood.peeng.identity.exceptions.EmailNotVerifiedException;
+import com.dawood.peeng.identity.exceptions.InvalidCredentialsException;
 import com.dawood.peeng.identity.models.EmailVerificationToken;
 import com.dawood.peeng.identity.models.User;
 import com.dawood.peeng.identity.repository.EmailVerificationTokenRepository;
@@ -107,4 +115,31 @@ public class IdentityService {
 
   }
 
+  public LoginResponseDTO login(LoginDTO payload) {
+
+    String normalizedEmail = payload.getEmail().trim();
+
+    User user = userRepository.findByEmailIgnoreCase(normalizedEmail)
+        .orElseThrow(() -> new InvalidCredentialsException("Username or password is incorrect", HttpStatus.BAD_REQUEST,
+            ErrorCode.BAD_REQUEST));
+
+    if (!passwordEncoder.matches(payload.getPassword(), user.getPasswordHash())) {
+      throw new InvalidCredentialsException("Username or password is incorrect", HttpStatus.BAD_REQUEST,
+          ErrorCode.BAD_REQUEST);
+    }
+
+    if (!user.isEmailVerified()) {
+      throw new EmailNotVerifiedException("Email is not verified", HttpStatus.CONFLICT, null);
+    }
+
+    if (user.getStatus() == Status.SUSPENDED) {
+      throw new AccountSuspendedException(
+          "Your account was suspended",
+          HttpStatus.CONFLICT,
+          null);
+    }
+
+    return null;
+
+  }
 }
