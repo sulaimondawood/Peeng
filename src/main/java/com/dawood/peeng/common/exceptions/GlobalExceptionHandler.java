@@ -8,35 +8,42 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.dawood.peeng.common.dto.ApiError;
 import com.dawood.peeng.common.enums.ErrorCode;
-import com.dawood.peeng.identity.exceptions.EmailNotVerifiedException;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-  @ExceptionHandler(EmailNotVerifiedException.class)
-  public ResponseEntity<ApiError> peengExceptionHandler(EmailNotVerifiedException ex, HttpServletRequest request) {
+  // @ExceptionHandler(EmailNotVerifiedException.class)
+  // public ResponseEntity<ApiError>
+  // emailNotVerifiedExceptionHandler(EmailNotVerifiedException ex,
+  // HttpServletRequest request) {
 
-    ApiError body = ApiError.builder()
-        .code(ex.getCode().name())
-        .status(ex.getStatus().value())
-        .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
-        .message(ex.getMessage())
-        .path(request.getRequestURI())
-        .build();
+  // ApiError body = ApiError.builder()
+  // .code(ex.getCode().name())
+  // .status(ex.getStatus().value())
+  // .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+  // .message(ex.getMessage())
+  // .path(request.getRequestURI())
+  // .build();
 
-    return ResponseEntity.badRequest().body(body);
+  // return ResponseEntity.badRequest().body(body);
 
-  }
+  // }
 
-  @ExceptionHandler(value = PeengException.class)
+  @ExceptionHandler(PeengException.class)
   public ResponseEntity<ApiError> peengExceptionHandler(PeengException ex, HttpServletRequest request) {
 
+    HttpStatus status = ex.getStatus() != null ? HttpStatus.resolve(ex.getStatus().value()) : HttpStatus.BAD_REQUEST;
+    if (status == null) {
+      status = HttpStatus.BAD_REQUEST;
+    }
+
     ApiError body = ApiError.builder()
         .code(ex.getCode().name())
-        .status(ex.getStatus().value())
-        .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+        .status(status.value())
+        // .error( HttpStatus.BAD_REQUEST.getReasonPhrase())
+        .error(status.getReasonPhrase())
         .message(ex.getMessage())
         .path(request.getRequestURI())
         .build();

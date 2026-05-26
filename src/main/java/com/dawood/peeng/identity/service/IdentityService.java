@@ -193,7 +193,7 @@ public class IdentityService {
     userRepository.save(user);
 
     if (!user.isEmailVerified()) {
-      throw new EmailNotVerifiedException("Email is not verified", HttpStatus.CONFLICT, null);
+      throw new EmailNotVerifiedException("Email is not verified", HttpStatus.UNAUTHORIZED, null);
     }
 
     // List<Membership> memberships =
