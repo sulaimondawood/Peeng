@@ -3,10 +3,9 @@ package com.dawood.peeng.monitor.models;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import org.springframework.http.HttpMethod;
-
 import com.dawood.peeng.common.models.MetaData;
 import com.dawood.peeng.identity.models.User;
+import com.dawood.peeng.monitor.enums.MonitorHttpTypes;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
 import com.dawood.peeng.monitor.enums.MonitorType;
 import com.dawood.peeng.tenant.model.Tenant;
@@ -70,7 +69,7 @@ public class Monitor extends MetaData {
   private MonitorStatus status;
 
   @Enumerated(EnumType.STRING)
-  private HttpMethod method;
+  private MonitorHttpTypes method;
 
   // Scheduling
   @Column(nullable = false)
