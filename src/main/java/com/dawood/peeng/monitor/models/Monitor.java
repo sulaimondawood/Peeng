@@ -86,10 +86,10 @@ public class Monitor extends MetaData {
   private Integer retryAttempts = 2;
 
   @Builder.Default
-  private Integer failureThreshold = 3;
+  private Integer failureThreshold = 3; // 3 failures will result to site down
 
   @Builder.Default
-  private Integer recoveryThreshold = 1;
+  private Integer recoveryThreshold = 1; // 1 success means UP
 
   // Assertions
   private Integer expectedStatusCode;
