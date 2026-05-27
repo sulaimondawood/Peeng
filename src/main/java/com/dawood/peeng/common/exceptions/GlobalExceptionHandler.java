@@ -1,8 +1,12 @@
 package com.dawood.peeng.common.exceptions;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -14,22 +18,28 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-  // @ExceptionHandler(EmailNotVerifiedException.class)
-  // public ResponseEntity<ApiError>
-  // emailNotVerifiedExceptionHandler(EmailNotVerifiedException ex,
-  // HttpServletRequest request) {
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<ApiError> methodArgumentNotValidExceptionHandler(MethodArgumentNotValidException ex,
+      HttpServletRequest request) {
 
-  // ApiError body = ApiError.builder()
-  // .code(ex.getCode().name())
-  // .status(ex.getStatus().value())
-  // .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
-  // .message(ex.getMessage())
-  // .path(request.getRequestURI())
-  // .build();
+    Map<String, String> validationErrors = new HashMap<>();
 
-  // return ResponseEntity.badRequest().body(body);
+    ex.getFieldErrors().forEach(err -> {
+      validationErrors.put(err.getField(), err.getDefaultMessage());
+    });
 
-  // }
+    ApiError error = ApiError.builder()
+        .code(ErrorCode.VALIDATION_ERROR.name())
+        .status(ex.getStatusCode().value())
+        .error(HttpStatus.BAD_REQUEST.name())
+        .message("Validation failed for one or more fields")
+        .path(request.getRequestURI())
+        .validationErrors(validationErrors)
+        .build();
+
+    return ResponseEntity.badRequest().body(error);
+
+  }
 
   @ExceptionHandler(PeengException.class)
   public ResponseEntity<ApiError> peengExceptionHandler(PeengException ex, HttpServletRequest request) {
