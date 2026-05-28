@@ -10,4 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MonitorService {
 
+  private final MonitorRepository monitorRepository;
+
 }
