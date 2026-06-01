@@ -1,4 +1,4 @@
-package com.dawood.peeng.monitor;
+package com.dawood.peeng.monitor.service;
 
 import java.util.UUID;
 
@@ -13,6 +13,7 @@ import com.dawood.peeng.identity.repository.UserRepository;
 import com.dawood.peeng.monitor.dtos.requests.CreateMonitorRequest;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
 import com.dawood.peeng.monitor.models.Monitor;
+import com.dawood.peeng.monitor.repository.MonitorRepository;
 import com.dawood.peeng.tenant.context.TenantContext;
 import com.dawood.peeng.tenant.exceptions.TenantException;
 import com.dawood.peeng.tenant.model.Tenant;

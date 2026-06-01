@@ -1,4 +1,4 @@
-package com.dawood.peeng.monitor;
+package com.dawood.peeng.monitor.repository;
 
 import java.util.UUID;
 
