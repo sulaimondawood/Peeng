@@ -20,8 +20,6 @@ public class CreateMonitorRequest {
   @URL(message = "Provide a valid url")
   private String url;
 
-  // private MonitorType type;
-
   @NotNull(message = "Provide the HTTP method")
   private MonitorHttpTypes method;
 
@@ -41,7 +39,5 @@ public class CreateMonitorRequest {
   private Integer expectedStatusCode = 200;
 
   private String expectedKeyword;
-
-  private String description;
 
 }
