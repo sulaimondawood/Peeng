@@ -12,4 +12,8 @@ public class MonitorService {
 
   private final MonitorRepository monitorRepository;
 
+  public void createMonitor() {
+
+  }
+
 }
