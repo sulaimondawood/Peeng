@@ -1,6 +1,6 @@
 package com.dawood.peeng.monitor.enums;
 
-public enum MonitorHttpTypes {
+public enum MonitorHttpType {
   GET,
   POST,
   PUT,

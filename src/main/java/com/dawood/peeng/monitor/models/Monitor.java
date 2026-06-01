@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import com.dawood.peeng.common.models.MetaData;
 import com.dawood.peeng.identity.models.User;
-import com.dawood.peeng.monitor.enums.MonitorHttpTypes;
+import com.dawood.peeng.monitor.enums.MonitorHttpType;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
 import com.dawood.peeng.monitor.enums.MonitorType;
 import com.dawood.peeng.tenant.model.Tenant;
@@ -69,7 +69,7 @@ public class Monitor extends MetaData {
   private MonitorStatus status;
 
   @Enumerated(EnumType.STRING)
-  private MonitorHttpTypes method;
+  private MonitorHttpType method;
 
   // Scheduling
   @Column(nullable = false)

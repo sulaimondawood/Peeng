@@ -2,7 +2,8 @@ package com.dawood.peeng.monitor.dtos.requests;
 
 import org.hibernate.validator.constraints.URL;
 
-import com.dawood.peeng.monitor.enums.MonitorHttpTypes;
+import com.dawood.peeng.monitor.enums.MonitorHttpType;
+import com.dawood.peeng.monitor.enums.MonitorType;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -21,7 +22,11 @@ public class CreateMonitorRequest {
   private String url;
 
   @NotNull(message = "Provide the HTTP method")
-  private MonitorHttpTypes method;
+  @Builder.Default
+  private MonitorHttpType method = MonitorHttpType.GET;
+
+  @Builder.Default
+  private MonitorType monitorType = MonitorType.HTTP;
 
   @Builder.Default
   private Integer intervalSeconds = 60;
