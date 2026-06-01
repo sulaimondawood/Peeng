@@ -1,5 +1,7 @@
 package com.dawood.peeng.monitor.dtos.requests;
 
+import java.util.concurrent.TimeUnit;
+
 import org.hibernate.validator.constraints.URL;
 
 import com.dawood.peeng.monitor.enums.MonitorHttpType;
@@ -29,10 +31,13 @@ public class CreateMonitorRequest {
   private MonitorType monitorType = MonitorType.HTTP;
 
   @Builder.Default
-  private Integer intervalSeconds = 60;
+  private long intervalValue = 60;
 
   @Builder.Default
-  private Integer timeoutSeconds = 10;
+  private TimeUnit intervalUnit = TimeUnit.SECONDS;
+
+  @Builder.Default
+  private long timeoutSeconds = 10;
 
   @Builder.Default
   private Integer failureThreshold = 3;
@@ -44,5 +49,9 @@ public class CreateMonitorRequest {
   private Integer expectedStatusCode = 200;
 
   private String expectedKeyword;
+
+  public long getCalculatedIntervalSeconds() {
+    return this.intervalUnit.toSeconds(this.intervalValue);
+  }
 
 }

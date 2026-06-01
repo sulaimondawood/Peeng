@@ -73,10 +73,10 @@ public class Monitor extends MetaData {
 
   // Scheduling
   @Column(nullable = false)
-  private Integer intervalSeconds;
+  private Long intervalSeconds;
 
   @Column(nullable = false)
-  private Integer timeoutSeconds;
+  private Long timeoutSeconds;
 
   // Monitor behavior
   @Builder.Default
@@ -99,7 +99,7 @@ public class Monitor extends MetaData {
   // Latest check state
   private Integer latestStatusCode;
 
-  private Integer latestResponseTimeMs;
+  private Long latestResponseTimeMs;
 
   @Column(columnDefinition = "TEXT")
   private String latestErrorMessage;
