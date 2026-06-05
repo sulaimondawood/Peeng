@@ -73,10 +73,13 @@ public class Monitor extends MetaData {
 
   // Scheduling
   @Column(nullable = false)
-  private Long intervalSeconds;
+  private Long intervalInSeconds;
 
   @Column(nullable = false)
-  private Long timeoutSeconds;
+  private Long nextCheckAt;
+
+  @Column(nullable = false)
+  private Long timeoutInSeconds;
 
   // Monitor behavior
   @Builder.Default

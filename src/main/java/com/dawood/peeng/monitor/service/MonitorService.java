@@ -1,5 +1,6 @@
 package com.dawood.peeng.monitor.service;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -68,8 +69,9 @@ public class MonitorService {
         .type(payload.getMonitorType())
         .status(MonitorStatus.PENDING)
         .method(payload.getMethod())
-        .intervalSeconds(intervalInSeconds)
-        .timeoutSeconds(payload.getTimeoutSeconds())
+        .intervalInSeconds(intervalInSeconds)
+        .timeoutInSeconds(payload.getTimeoutSeconds())
+        .nextCheckAt(LocalDateTime.now().plusSeconds(intervalInSeconds))
         .failureThreshold(payload.getFailureThreshold())
         .recoveryThreshold(payload.getRecoveryThreshold())
         .expectedStatusCode(payload.getExpectedStatusCode())
