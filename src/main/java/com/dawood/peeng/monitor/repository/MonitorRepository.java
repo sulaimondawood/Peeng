@@ -10,6 +10,6 @@ import com.dawood.peeng.monitor.models.Monitor;
 
 public interface MonitorRepository extends JpaRepository<Monitor, UUID> {
 
-  List<Monitor> findAllByActiveTrueAndNextCheckAtBefore(LocalDateTime time);
+  List<Monitor> findAllByActiveTrueAndNextCheckAtLessThanEqual(LocalDateTime time);
 
 }

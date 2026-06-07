@@ -11,9 +11,11 @@ import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.monitor.repository.MonitorRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SchedulerService {
 
   private final MonitorRepository monitorRepository;
@@ -25,7 +27,10 @@ public class SchedulerService {
     List<Monitor> dueMonitors = monitorRepository
         .findAllByActiveTrueAndNextCheckAtLessThanEqual(LocalDateTime.now());
 
-    dueMonitors.forEach((monitor) -> monitorWorkerProducer.sendScheduledMonitor(monitor.getId()));
+    dueMonitors.forEach((monitor) -> {
+      log.info("Sent Scheduled Monitor ID: " + monitor.getId().toString() + " to Scheduler Producer Worker");
+      monitorWorkerProducer.sendScheduledMonitor(monitor.getId());
+    });
 
   }
 

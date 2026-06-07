@@ -8,9 +8,11 @@ import org.springframework.stereotype.Service;
 import com.dawood.peeng.configs.RabbitMQConfig;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MonitorWorkerProducer {
 
   private final RabbitTemplate rabbitTemplate;
@@ -21,6 +23,8 @@ public class MonitorWorkerProducer {
         RabbitMQConfig.EXCHANGE,
         RabbitMQConfig.SCHEDULER_ROUTING_KEY,
         monitorId);
+
+    log.info("Sent Scheduled Monitor ID: " + monitorId.toString() + " to Scheduler Consumer Worker");
 
   }
 
