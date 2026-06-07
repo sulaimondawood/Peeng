@@ -41,7 +41,7 @@ public class MonitorCheck extends MetaData {
 
   private Integer statusCode;
 
-  private Integer responseTimeMs;
+  private Long responseTimeMs;
 
   @Column(columnDefinition = "TEXT")
   private String errorMessage;
