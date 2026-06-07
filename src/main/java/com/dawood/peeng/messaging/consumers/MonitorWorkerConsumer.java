@@ -6,6 +6,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import com.dawood.peeng.configs.RabbitMQConfig;
 import com.dawood.peeng.monitor.models.Monitor;
@@ -27,7 +28,7 @@ public class MonitorWorkerConsumer {
   @RabbitListener(queues = RabbitMQConfig.SCHEDULER_ROUTING_QUEUE)
   public void consumeScheduledMonitor(UUID monitorId) {
 
-    Monitor scheduledMonitor;
+    Monitor scheduledMonitor = null;
 
     try {
 
@@ -40,16 +41,21 @@ public class MonitorWorkerConsumer {
 
     long start = System.currentTimeMillis();
 
+    ResponseEntity<Void> response = null;
+
     try {
 
-      ResponseEntity<Void> response = restClient.get()
+      response = restClient.get()
           .uri(scheduledMonitor.getUrl())
           .retrieve()
           .toBodilessEntity();
 
       monitorCheckService.processSuccess(scheduledMonitor, start, response);
-    } catch (Exception e) {
-      // TODO: handle exception
+    } catch (RestClientException e) {
+      long responseTime = System.currentTimeMillis() - start;
+      log.warn("Ping failed for monitor {}: {}", scheduledMonitor.getName(), e.getMessage());
+
+      monitorCheckService.processFailure(scheduledMonitor, responseTime, response, e);
     }
 
   }

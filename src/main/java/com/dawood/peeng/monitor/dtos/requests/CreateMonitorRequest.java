@@ -7,6 +7,7 @@ import org.hibernate.validator.constraints.URL;
 import com.dawood.peeng.monitor.enums.MonitorHttpType;
 import com.dawood.peeng.monitor.enums.MonitorType;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
@@ -42,8 +43,9 @@ public class CreateMonitorRequest {
   @Builder.Default
   private Integer failureThreshold = 3;
 
+  @Max(message = "Threshold value cannot exceed 3", value = 3)
   @Builder.Default
-  private Integer recoveryThreshold = 2;
+  private Integer recoveryThreshold = 1;
 
   @Builder.Default
   private Integer expectedStatusCode = 200;

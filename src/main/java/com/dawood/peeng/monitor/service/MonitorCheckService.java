@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientException;
 
 import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.monitor.models.MonitorCheck;
@@ -22,7 +23,9 @@ public class MonitorCheckService {
   private final MonitorStateService monitorStateService;
 
   @Transactional
-  public void processSuccess(Monitor monitor, long responseTime, ResponseEntity<Void> response) {
+  public void processSuccess(Monitor monitor, long startTime, ResponseEntity<Void> response) {
+
+    long responseTime = System.currentTimeMillis() - startTime;
 
     MonitorCheck monitorCheck = MonitorCheck.builder()
         .monitor(monitor)
@@ -30,7 +33,6 @@ public class MonitorCheckService {
         .statusCode(response.getStatusCode()
             .value())
         .responseTimeMs(responseTime)
-        .errorMessage(null)
         .checkedAt(LocalDateTime.now())
         .build();
 
@@ -38,18 +40,51 @@ public class MonitorCheckService {
 
     monitor.setNextCheckAt(
         monitor.getNextCheckAt().plusSeconds(monitor.getIntervalInSeconds()));
-    monitor.setLatestStatusCode(statusCode);
+    monitor.setConsecutiveFailures(0);
+    monitor.setConsecutiveSuccesses(
+        monitor.getConsecutiveSuccesses() + 1);
+    monitor.setLatestStatusCode(response.getStatusCode().value());
     monitor.setLatestResponseTimeMs(responseTime);
     monitor.setLastCheckedAt(LocalDateTime.now());
     monitor.setLastSuccessfulCheckAt(LocalDateTime.now());
 
-    monitor.setConsecutiveFailures(0);
-    monitor.setConsecutiveSuccesses(
-        monitor.getConsecutiveSuccesses() + 1);
-
     Monitor savedMonitor = monitorRepository.save(monitor);
 
     monitorStateService.handleSuccess(savedMonitor);
+
+  }
+
+  @Transactional
+  public void processFailure(Monitor monitor, long startTime, ResponseEntity<Void> response,
+      RestClientException exception) {
+
+    long responseTime = System.currentTimeMillis() - startTime;
+
+    MonitorCheck monitorCheck = MonitorCheck.builder()
+        .monitor(monitor)
+        .successful(false)
+        .statusCode(response.getStatusCode()
+            .value())
+        .responseTimeMs(responseTime)
+        .errorMessage(exception.getMessage())
+        .checkedAt(LocalDateTime.now())
+        .build();
+
+    monitorCheckRepository.save(monitorCheck);
+
+    monitor.setNextCheckAt(
+        monitor.getNextCheckAt().plusSeconds(monitor.getIntervalInSeconds()));
+    monitor.setConsecutiveFailures(monitor.getConsecutiveFailures() + 1);
+    monitor.setConsecutiveSuccesses(
+        0);
+    monitor.setLatestStatusCode(response.getStatusCode().value());
+    monitor.setLatestResponseTimeMs(responseTime);
+    monitor.setLastCheckedAt(LocalDateTime.now());
+    monitor.setLastSuccessfulCheckAt(LocalDateTime.now());
+
+    Monitor savedMonitor = monitorRepository.save(monitor);
+
+    monitorStateService.handleFailure(savedMonitor);
 
   }
 
