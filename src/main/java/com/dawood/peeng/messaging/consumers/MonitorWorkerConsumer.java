@@ -3,7 +3,9 @@ package com.dawood.peeng.messaging.consumers;
 import java.util.UUID;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import com.dawood.peeng.configs.RabbitMQConfig;
 import com.dawood.peeng.monitor.models.Monitor;
@@ -18,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MonitorWorkerConsumer {
 
   private final MonitorRepository monitorRepository;
+  private final RestClient restClient;
 
   @RabbitListener(queues = RabbitMQConfig.SCHEDULER_ROUTING_QUEUE)
   public void consumeScheduledMonitor(UUID monitorId) {
@@ -26,6 +29,13 @@ public class MonitorWorkerConsumer {
 
       Monitor scheduledMonitor = monitorRepository.findById(monitorId)
           .orElseThrow(() -> new IllegalArgumentException("Monitor not found: " + monitorId));
+
+      long start = System.currentTimeMillis();
+
+      ResponseEntity<Void> response = restClient.get()
+          .uri(scheduledMonitor.getUrl())
+          .retrieve()
+          .toBodilessEntity();
 
     } catch (IllegalArgumentException e) {
       log.error("Background task skipped: {}", e.getMessage());
