@@ -94,6 +94,14 @@ public class Monitor extends MetaData {
   @Builder.Default
   private Integer recoveryThreshold = 1; // 1 success means UP
 
+  @Builder.Default
+  @Column(nullable = false)
+  private Integer consecutiveFailures = 0;
+
+  @Builder.Default
+  @Column(nullable = false)
+  private Integer consecutiveSuccesses = 0;
+
   // Assertions
   private Integer expectedStatusCode;
 
