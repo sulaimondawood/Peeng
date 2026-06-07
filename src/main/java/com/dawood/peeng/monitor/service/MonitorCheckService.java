@@ -56,7 +56,7 @@ public class MonitorCheckService {
 
   @Transactional
   public void processFailure(Monitor monitor, long startTime, ResponseEntity<Void> response,
-      RestClientException exception) {
+      String message) {
 
     long responseTime = System.currentTimeMillis() - startTime;
 
@@ -66,7 +66,7 @@ public class MonitorCheckService {
         .statusCode(response.getStatusCode()
             .value())
         .responseTimeMs(responseTime)
-        .errorMessage(exception.getMessage())
+        .errorMessage(message)
         .checkedAt(LocalDateTime.now())
         .build();
 
