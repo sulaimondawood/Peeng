@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import com.dawood.peeng.messaging.producers.MonitorWorkerProducer;
 import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.monitor.repository.MonitorRepository;
 
@@ -16,11 +17,15 @@ import lombok.RequiredArgsConstructor;
 public class SchedulerService {
 
   private final MonitorRepository monitorRepository;
+  private final MonitorWorkerProducer monitorWorkerProducer;
 
-  @Scheduled(fixedRate = 1000)
+  @Scheduled(fixedDelay = 1000)
   public void scheduleChecks() {
 
-    List<Monitor> dueMonitors = monitorRepository.findAllByActiveTrueAndNextCheckAtBefore(LocalDateTime.now());
+    List<Monitor> dueMonitors = monitorRepository
+        .findAllByActiveTrueAndNextCheckAtLessThanEqual(LocalDateTime.now());
+
+    dueMonitors.forEach((monitor) -> monitorWorkerProducer.sendScheduledMonitor(monitor.getId()));
 
   }
 

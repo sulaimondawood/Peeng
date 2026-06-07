@@ -76,7 +76,7 @@ public class Monitor extends MetaData {
   private Long intervalInSeconds;
 
   @Column(nullable = false)
-  private Long nextCheckAt;
+  private LocalDateTime nextCheckAt;
 
   @Column(nullable = false)
   private Long timeoutInSeconds;

@@ -14,6 +14,10 @@ public class RabbitMQConfig {
 
   public static final String EXCHANGE = "peeng.exchange";
 
+  public static final String SCHEDULER_ROUTING_KEY = "monitor.execute";
+
+  public static final String SCHEDULER_ROUTING_QUEUE = "monitor.execute.queue";
+
   public static final String EMAIL_QUEUE = "peeng.email.verification.queue";
 
   public static final String EMAIL_ROUTING_KEY = "peeng.email.verification";
@@ -28,11 +32,24 @@ public class RabbitMQConfig {
     return new Queue(EMAIL_QUEUE);
   }
 
+  public Queue schedulerQueue() {
+    return new Queue(SCHEDULER_ROUTING_QUEUE);
+  }
+
   @Bean
   public Binding emailBinding(Queue emailQueue, TopicExchange exchange) {
     return BindingBuilder.bind(emailQueue)
         .to(exchange)
         .with(EMAIL_ROUTING_KEY);
+  }
+
+  @Bean
+  public Binding schedulerBinding(Queue schedulerQueue, TopicExchange exchange) {
+
+    return BindingBuilder.bind(schedulerQueue)
+        .to(exchange)
+        .with(SCHEDULER_ROUTING_KEY);
+
   }
 
   @Bean
