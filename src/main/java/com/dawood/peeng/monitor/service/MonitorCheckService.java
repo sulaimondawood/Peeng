@@ -63,8 +63,9 @@ public class MonitorCheckService {
     MonitorCheck monitorCheck = MonitorCheck.builder()
         .monitor(monitor)
         .successful(false)
-        .statusCode(response.getStatusCode()
-            .value())
+        .statusCode(0)
+//        .statusCode(response.getStatusCode()
+//            .value())
         .responseTimeMs(responseTime)
         .errorMessage(message)
         .checkedAt(LocalDateTime.now())
@@ -77,7 +78,8 @@ public class MonitorCheckService {
     monitor.setConsecutiveFailures(monitor.getConsecutiveFailures() + 1);
     monitor.setConsecutiveSuccesses(
         0);
-    monitor.setLatestStatusCode(response.getStatusCode().value());
+    monitor.setLatestStatusCode(0);
+//    monitor.setLatestStatusCode(response.getStatusCode().value());
     monitor.setLatestResponseTimeMs(responseTime);
     monitor.setLastCheckedAt(LocalDateTime.now());
     monitor.setLastSuccessfulCheckAt(LocalDateTime.now());

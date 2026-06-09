@@ -9,12 +9,15 @@ import com.dawood.peeng.monitor.enums.MonitorType;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CreateMonitorRequest {
 
   @NotBlank(message = "Provide the Monitor name")
@@ -24,36 +27,39 @@ public class CreateMonitorRequest {
   @URL(message = "Provide a valid url")
   private String url;
 
-  @NotNull(message = "Provide the HTTP method")
-  @Builder.Default
+  // @NotNull(message = "Provide the HTTP method")
+
   private MonitorHttpType method = MonitorHttpType.GET;
 
-  @Builder.Default
   private MonitorType monitorType = MonitorType.HTTP;
 
-  @Builder.Default
-  private long intervalValue = 60;
+  private Long intervalValue = 60L;
 
-  @Builder.Default
   private TimeUnit intervalUnit = TimeUnit.SECONDS;
 
-  @Builder.Default
-  private long timeoutSeconds = 10;
+  private Long timeoutSeconds = 10L;
 
-  @Builder.Default
   private Integer failureThreshold = 3;
 
   @Max(message = "Threshold value cannot exceed 3", value = 3)
-  @Builder.Default
+
   private Integer recoveryThreshold = 1;
 
-  @Builder.Default
   private Integer expectedStatusCode = 200;
 
   private String expectedKeyword;
 
   public long getCalculatedIntervalSeconds() {
+    if (this.intervalUnit == null || this.intervalValue == null) {
+      return 60L;
+    }
     return this.intervalUnit.toSeconds(this.intervalValue);
+    // return this.intervalUnit.toSeconds(this.intervalValue);
+  }
+
+  public long getTimeoutSeconds() {
+    // If Jackson sets it to null, return a safe primitive fallback value
+    return this.timeoutSeconds == null ? 10L : this.timeoutSeconds;
   }
 
 }

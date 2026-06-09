@@ -32,6 +32,7 @@ public class RabbitMQConfig {
     return new Queue(EMAIL_QUEUE);
   }
 
+  @Bean
   public Queue schedulerQueue() {
     return new Queue(SCHEDULER_ROUTING_QUEUE);
   }

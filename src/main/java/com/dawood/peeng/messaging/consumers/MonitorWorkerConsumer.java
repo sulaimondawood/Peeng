@@ -37,6 +37,7 @@ public class MonitorWorkerConsumer {
 
     } catch (IllegalArgumentException e) {
       log.error("Background task skipped: {}", e.getMessage());
+      return;
     }
 
     long start = System.currentTimeMillis();
@@ -54,8 +55,8 @@ public class MonitorWorkerConsumer {
     } catch (RestClientException e) {
       long responseTime = System.currentTimeMillis() - start;
       log.warn("Ping failed for monitor {}: {}", scheduledMonitor.getName(), e.getMessage());
-
-      monitorCheckService.processFailure(scheduledMonitor, responseTime, response, e);
+      monitorCheckService.processFailure(scheduledMonitor, responseTime, response, e.getMessage());
+      return;
     }
 
   }
