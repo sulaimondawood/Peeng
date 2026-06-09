@@ -2,6 +2,8 @@ package com.dawood.peeng.monitor.dtos.requests;
 
 import java.util.concurrent.TimeUnit;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.URL;
 
 import com.dawood.peeng.monitor.enums.MonitorHttpType;
@@ -27,25 +29,31 @@ public class CreateMonitorRequest {
   @URL(message = "Provide a valid url")
   private String url;
 
-  // @NotNull(message = "Provide the HTTP method")
+  @NotNull(message = "Provide the HTTP method")
+  @JsonProperty(defaultValue = "GET") // Tells Jackson what to use if missing
+  private MonitorHttpType method;
 
-  private MonitorHttpType method = MonitorHttpType.GET;
+  @JsonProperty(defaultValue = "HTTP")
+  private MonitorType monitorType;
 
-  private MonitorType monitorType = MonitorType.HTTP;
+  @JsonProperty(defaultValue = "60")
+  private Long intervalValue;
 
-  private Long intervalValue = 60L;
+  @JsonProperty(defaultValue = "SECONDS")
+  private TimeUnit intervalUnit;
 
-  private TimeUnit intervalUnit = TimeUnit.SECONDS;
+  @JsonProperty(defaultValue = "10")
+  private Long timeoutSeconds;
 
-  private Long timeoutSeconds = 10L;
-
-  private Integer failureThreshold = 3;
+  @JsonProperty(defaultValue = "3")
+  private Integer failureThreshold;
 
   @Max(message = "Threshold value cannot exceed 3", value = 3)
+  @JsonProperty(defaultValue = "1")
+  private Integer recoveryThreshold;
 
-  private Integer recoveryThreshold = 1;
-
-  private Integer expectedStatusCode = 200;
+  @JsonProperty(defaultValue = "200")
+  private Integer expectedStatusCode;
 
   private String expectedKeyword;
 
@@ -54,11 +62,9 @@ public class CreateMonitorRequest {
       return 60L;
     }
     return this.intervalUnit.toSeconds(this.intervalValue);
-    // return this.intervalUnit.toSeconds(this.intervalValue);
   }
 
   public long getTimeoutSeconds() {
-    // If Jackson sets it to null, return a safe primitive fallback value
     return this.timeoutSeconds == null ? 10L : this.timeoutSeconds;
   }
 
