@@ -30,11 +30,6 @@ public class MonitorCheckService {
 
     long responseTime = System.currentTimeMillis() - startTime;
 
-
-    System.out.println(response.getStatusCode().value());
-
-    log.info(String.valueOf(response.getStatusCode().value()));
-
     MonitorCheck monitorCheck = MonitorCheck.builder()
         .monitor(monitor)
         .successful(true)
@@ -68,16 +63,9 @@ public class MonitorCheckService {
 
     long responseTime = System.currentTimeMillis() - startTime;
 
-
-    System.out.println(response.getStatusCode().value());
-
-    log.info(String.valueOf(response.getStatusCode().value()));
-
-
     MonitorCheck monitorCheck = MonitorCheck.builder()
         .monitor(monitor)
         .successful(false)
-        .statusCode(0)
         .statusCode(response.getStatusCode()
             .value())
         .responseTimeMs(responseTime)
@@ -92,7 +80,6 @@ public class MonitorCheckService {
     monitor.setConsecutiveFailures(monitor.getConsecutiveFailures() + 1);
     monitor.setConsecutiveSuccesses(
         0);
-    monitor.setLatestStatusCode(0);
     monitor.setLatestStatusCode(response.getStatusCode().value());
     monitor.setLatestResponseTimeMs(responseTime);
     monitor.setLastCheckedAt(LocalDateTime.now());
@@ -103,5 +90,7 @@ public class MonitorCheckService {
     monitorStateService.handleFailure(savedMonitor);
 
   }
+
+
 
 }
