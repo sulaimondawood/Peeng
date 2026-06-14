@@ -50,7 +50,9 @@ public class IncidentService {
 
     public Incident resolveIncident(Monitor monitor) {
 
-        long start = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
+
+        LocalDateTime now =LocalDateTime.now();
 
         Incident incident =
                 incidentRepository
@@ -63,22 +65,22 @@ public class IncidentService {
                                 HttpStatus.NOT_FOUND,
                                 ErrorCode.NOT_FOUND));
 
-        incident.setResolvedAt(LocalDateTime.now());
+        incident.setResolvedAt(now);
         incident.setStatus(IncidentStatus.RESOLVED);
 
         incident.setDurationSeconds(
                 Duration.between(
                         incident.getStartedAt(),
-                        LocalDateTime.now()
+                        now
                 ).toSeconds()
         );
 
         incident.setResolvedStatusCode(
-                200
+                HttpStatus.OK.value()
         );
 
         incident.setResolvedResponseTimeMs(
-                System.currentTimeMillis() - start
+                System.currentTimeMillis() - startTime
         );
 
         return incidentRepository.save(incident);
