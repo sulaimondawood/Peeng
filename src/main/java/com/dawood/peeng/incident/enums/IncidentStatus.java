@@ -1,4 +1,4 @@
-package com.dawood.peeng.monitor.enums;
+package com.dawood.peeng.incident.enums;
 
 public enum IncidentStatus {
     OPEN,

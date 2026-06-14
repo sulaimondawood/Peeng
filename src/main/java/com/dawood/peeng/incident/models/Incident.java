@@ -1,7 +1,8 @@
-package com.dawood.peeng.monitor.models;
+package com.dawood.peeng.incident.models;
 
 import com.dawood.peeng.common.models.MetaData;
-import com.dawood.peeng.monitor.enums.IncidentStatus;
+import com.dawood.peeng.incident.enums.IncidentStatus;
+import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.tenant.model.Tenant;
 import jakarta.persistence.*;
 import lombok.*;
@@ -38,6 +39,10 @@ public class Incident extends MetaData {
     private LocalDateTime startedAt;
 
     private LocalDateTime resolvedAt;
+
+    private Long initialResponseTimeMs;
+
+    private Long resolvedResponseTimeMs;
 
     private Long durationSeconds;
 

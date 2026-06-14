@@ -2,6 +2,8 @@ package com.dawood.peeng.monitor.service;
 
 import java.time.LocalDateTime;
 
+import com.dawood.peeng.incident.service.IncidentService;
+import com.dawood.peeng.monitor.repository.MonitorRepository;
 import org.springframework.stereotype.Service;
 
 import com.dawood.peeng.monitor.enums.MonitorStatus;
@@ -12,6 +14,9 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class MonitorStateService {
+
+  private final IncidentService incidentService;
+  private final MonitorRepository monitorRepository;
 
   public void handleSuccess(Monitor monitor) {
 
@@ -24,6 +29,9 @@ public class MonitorStateService {
       monitor.setStatus(MonitorStatus.UP);
       monitor.setLastStatusChangeAt(LocalDateTime.now());
       monitor.setIncidentOpen(false);
+
+      monitorRepository.save(monitor);
+
 
     }
 
@@ -40,7 +48,12 @@ public class MonitorStateService {
             LocalDateTime.now());
         monitor.setIncidentOpen(true);
 
+        monitorRepository.save(monitor);
+
       }
+
+      incidentService.openIncident(monitor);
+
 
     }
 
