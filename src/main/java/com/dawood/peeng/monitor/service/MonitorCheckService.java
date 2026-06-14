@@ -2,6 +2,8 @@ package com.dawood.peeng.monitor.service;
 
 import java.time.LocalDateTime;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 public class MonitorCheckService {
 
+  private static final Logger log = LoggerFactory.getLogger(MonitorCheckService.class);
   private final MonitorCheckRepository monitorCheckRepository;
   private final MonitorRepository monitorRepository;
   private final MonitorStateService monitorStateService;
@@ -26,6 +29,11 @@ public class MonitorCheckService {
   public void processSuccess(Monitor monitor, long startTime, ResponseEntity<Void> response) {
 
     long responseTime = System.currentTimeMillis() - startTime;
+
+
+    System.out.println(response.getStatusCode().value());
+
+    log.info(String.valueOf(response.getStatusCode().value()));
 
     MonitorCheck monitorCheck = MonitorCheck.builder()
         .monitor(monitor)
@@ -60,12 +68,18 @@ public class MonitorCheckService {
 
     long responseTime = System.currentTimeMillis() - startTime;
 
+
+    System.out.println(response.getStatusCode().value());
+
+    log.info(String.valueOf(response.getStatusCode().value()));
+
+
     MonitorCheck monitorCheck = MonitorCheck.builder()
         .monitor(monitor)
         .successful(false)
         .statusCode(0)
-//        .statusCode(response.getStatusCode()
-//            .value())
+        .statusCode(response.getStatusCode()
+            .value())
         .responseTimeMs(responseTime)
         .errorMessage(message)
         .checkedAt(LocalDateTime.now())
@@ -79,7 +93,7 @@ public class MonitorCheckService {
     monitor.setConsecutiveSuccesses(
         0);
     monitor.setLatestStatusCode(0);
-//    monitor.setLatestStatusCode(response.getStatusCode().value());
+    monitor.setLatestStatusCode(response.getStatusCode().value());
     monitor.setLatestResponseTimeMs(responseTime);
     monitor.setLastCheckedAt(LocalDateTime.now());
     monitor.setLastSuccessfulCheckAt(LocalDateTime.now());
