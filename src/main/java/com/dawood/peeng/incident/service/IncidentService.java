@@ -6,7 +6,6 @@ import com.dawood.peeng.incident.exceptions.IncidentNotFoundException;
 import com.dawood.peeng.incident.models.Incident;
 import com.dawood.peeng.incident.repository.IncidentRepository;
 import com.dawood.peeng.monitor.models.Monitor;
-import com.dawood.peeng.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,7 +19,6 @@ import java.time.LocalDateTime;
 public class IncidentService {
 
     private final IncidentRepository incidentRepository;
-    private final NotificationService notificationService;
 
     @Transactional()
     public Incident openIncident(Monitor monitor) {
@@ -48,10 +46,7 @@ public class IncidentService {
                 .acknowledged(false)
                 .build();
 
-        Incident savedIncident = incidentRepository.save(newIncident);
-//        notificationService.sendDownAlert();
-
-        return savedIncident;
+        return  incidentRepository.save(newIncident);
 
     }
 

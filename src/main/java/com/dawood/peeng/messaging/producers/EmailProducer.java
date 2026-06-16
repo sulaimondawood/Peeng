@@ -21,4 +21,8 @@ public class EmailProducer {
         event);
   }
 
+  public void sendDownAlert(){
+
+  }
+
 }

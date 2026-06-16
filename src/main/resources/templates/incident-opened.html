@@ -1,0 +1,275 @@
+
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Incident Opened</title>
+</head>
+
+<body style="margin:0;padding:0;background:#f4f7fb;font-family:Inter,Arial,sans-serif;">
+
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+    <tr>
+        <td align="center" style="padding:40px 20px;">
+
+            <table role="presentation" width="700" cellspacing="0" cellpadding="0" border="0"
+                   style="background:#ffffff;border-radius:20px;overflow:hidden;">
+
+                <!-- Header -->
+                <tr>
+                    <td style="background:#0f172a;padding:28px 40px;">
+
+                        <table width="100%">
+                            <tr>
+
+                                <td align="left">
+                                    <img src="{{logoUrl}}" width="140" alt="Peeng"/>
+                                </td>
+
+                                <td align="right">
+
+<span style="
+background:#fee2e2;
+color:#dc2626;
+padding:10px 16px;
+border-radius:999px;
+font-size:13px;
+font-weight:700;">
+INCIDENT OPENED
+</span>
+
+                                </td>
+
+                            </tr>
+                        </table>
+
+                    </td>
+                </tr>
+
+                <!-- Hero -->
+
+                <tr>
+                    <td style="padding:40px;">
+
+                        <h1 style="
+margin:0;
+font-size:34px;
+color:#111827;
+font-weight:700;">
+                            🚨 Service Outage Detected
+                        </h1>
+
+                        <p style="
+margin-top:16px;
+font-size:16px;
+line-height:28px;
+color:#4b5563;">
+                            Peeng detected that one of your monitored services is currently unavailable.
+                            An incident has been automatically created.
+                        </p>
+
+                    </td>
+                </tr>
+
+                <!-- Monitor Card -->
+
+                <tr>
+                    <td style="padding:0 40px 24px;">
+
+                        <div style="
+background:#f8fafc;
+border:1px solid #e5e7eb;
+border-radius:16px;
+padding:24px;">
+
+                            <h3 style="margin-top:0;color:#111827;">
+                                Monitor Information
+                            </h3>
+
+                            <table width="100%">
+
+                                <tr>
+                                    <td style="padding:8px 0;color:#6b7280;">Workspace</td>
+                                    <td align="right">{{workspaceName}}</td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:8px 0;color:#6b7280;">Monitor</td>
+                                    <td align="right">{{monitorName}}</td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:8px 0;color:#6b7280;">URL</td>
+                                    <td align="right">{{monitorUrl}}</td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:8px 0;color:#6b7280;">Incident ID</td>
+                                    <td align="right">#{{incidentId}}</td>
+                                </tr>
+
+                            </table>
+
+                        </div>
+
+                    </td>
+                </tr>
+
+                <!-- Metrics -->
+
+                <tr>
+                    <td style="padding:0 40px 24px;">
+
+                        <table width="100%">
+                            <tr>
+
+                                <td width="32%"
+                                    style="
+    background:#fff7ed;
+    border:1px solid #fed7aa;
+    border-radius:12px;
+    padding:20px;
+    text-align:center;">
+
+                                    <div style="font-size:13px;color:#9a3412;">
+                                        Status Code
+                                    </div>
+
+                                    <div style="
+font-size:28px;
+font-weight:700;
+margin-top:8px;">
+                                        {{statusCode}}
+                                    </div>
+
+                                </td>
+
+                                <td width="2%"></td>
+
+                                <td width="32%"
+                                    style="
+    background:#fef2f2;
+    border:1px solid #fecaca;
+    border-radius:12px;
+    padding:20px;
+    text-align:center;">
+
+                                    <div style="font-size:13px;color:#991b1b;">
+                                        Response Time
+                                    </div>
+
+                                    <div style="
+font-size:28px;
+font-weight:700;
+margin-top:8px;">
+                                        {{responseTime}}ms
+                                    </div>
+
+                                </td>
+
+                                <td width="2%"></td>
+
+                                <td width="32%"
+                                    style="
+    background:#eff6ff;
+    border:1px solid #bfdbfe;
+    border-radius:12px;
+    padding:20px;
+    text-align:center;">
+
+                                    <div style="font-size:13px;color:#1d4ed8;">
+                                        Failures
+                                    </div>
+
+                                    <div style="
+font-size:28px;
+font-weight:700;
+margin-top:8px;">
+                                        {{failureCount}}
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        </table>
+
+                    </td>
+                </tr>
+
+                <!-- Error -->
+
+                <tr>
+                    <td style="padding:0 40px 24px;">
+
+                        <div style="
+background:#fef2f2;
+border:1px solid #fecaca;
+border-radius:12px;
+padding:20px;">
+
+                            <div style="
+font-size:14px;
+font-weight:600;
+margin-bottom:12px;
+color:#991b1b;">
+                                Latest Error
+                            </div>
+
+                            <pre style="
+margin:0;
+white-space:pre-wrap;
+font-size:13px;
+line-height:22px;
+font-family:Consolas,monospace;
+color:#7f1d1d;">
+{{latestError}}
+</pre>
+
+                        </div>
+
+                    </td>
+                </tr>
+
+                <!-- CTA -->
+
+                <tr>
+                    <td align="center" style="padding:10px 40px 40px;">
+
+                        <a href="{{dashboardUrl}}"
+                           style="
+display:inline-block;
+background:#58CCED;
+color:#ffffff;
+padding:16px 32px;
+border-radius:12px;
+font-weight:600;
+text-decoration:none;">
+                            View Incident
+                        </a>
+
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+
+                <tr>
+                    <td style="
+background:#f8fafc;
+padding:24px;
+text-align:center;
+font-size:13px;
+color:#6b7280;">
+
+                        © 2026 Peeng Monitoring Platform
+
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

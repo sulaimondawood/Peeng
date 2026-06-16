@@ -1,0 +1,382 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Service Recovered</title>
+</head>
+
+<body style="margin:0;padding:0;background:#f4f7fb;font-family:Inter,Arial,sans-serif;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+    <tr>
+        <td align="center" style="padding:40px 20px;">
+
+            <table role="presentation"
+                   width="700"
+                   cellspacing="0"
+                   cellpadding="0"
+                   border="0"
+                   style="background:#ffffff;border-radius:20px;overflow:hidden;">
+
+                <!-- Header -->
+
+                <tr>
+                    <td style="background:#0f172a;padding:28px 40px;">
+
+                        <table width="100%">
+                            <tr>
+
+                                <td align="left">
+                                    <img src="{{logoUrl}}" width="140" alt="Peeng"/>
+                                </td>
+
+                                <td align="right">
+
+<span style="
+background:#dcfce7;
+color:#15803d;
+padding:10px 16px;
+border-radius:999px;
+font-size:13px;
+font-weight:700;">
+INCIDENT RESOLVED
+</span>
+
+                                </td>
+
+                            </tr>
+                        </table>
+
+                    </td>
+                </tr>
+
+                <!-- Hero -->
+
+                <tr>
+                    <td style="padding:40px;">
+
+                        <h1 style="
+margin:0;
+font-size:34px;
+color:#111827;
+font-weight:700;">
+                            ✅ Service Recovered
+                        </h1>
+
+                        <p style="
+margin-top:16px;
+font-size:16px;
+line-height:28px;
+color:#4b5563;">
+                            Good news. Peeng has detected that your monitored service is healthy again.
+                            The incident has been automatically resolved and monitoring continues.
+                        </p>
+
+                    </td>
+                </tr>
+
+                <!-- Monitor Information -->
+
+                <tr>
+                    <td style="padding:0 40px 24px;">
+
+                        <div style="
+background:#f8fafc;
+border:1px solid #e5e7eb;
+border-radius:16px;
+padding:24px;">
+
+                            <h3 style="
+margin-top:0;
+margin-bottom:20px;
+color:#111827;">
+                                Recovery Summary
+                            </h3>
+
+                            <table width="100%">
+
+                                <tr>
+                                    <td style="padding:8px 0;color:#6b7280;">Workspace</td>
+                                    <td align="right">{{workspaceName}}</td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:8px 0;color:#6b7280;">Monitor</td>
+                                    <td align="right">{{monitorName}}</td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:8px 0;color:#6b7280;">URL</td>
+                                    <td align="right">{{monitorUrl}}</td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:8px 0;color:#6b7280;">Incident ID</td>
+                                    <td align="right">#{{incidentId}}</td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:8px 0;color:#6b7280;">Started At</td>
+                                    <td align="right">{{startedAt}}</td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:8px 0;color:#6b7280;">Recovered At</td>
+                                    <td align="right">{{resolvedAt}}</td>
+                                </tr>
+
+                            </table>
+
+                        </div>
+
+                    </td>
+                </tr>
+
+                <!-- Metrics -->
+
+                <tr>
+                    <td style="padding:0 40px 24px;">
+
+                        <table width="100%">
+                            <tr>
+
+                                <td width="32%"
+                                    style="
+    background:#ecfdf5;
+    border:1px solid #bbf7d0;
+    border-radius:12px;
+    padding:20px;
+    text-align:center;">
+
+                                    <div style="
+font-size:13px;
+color:#15803d;">
+                                        Downtime
+                                    </div>
+
+                                    <div style="
+font-size:28px;
+font-weight:700;
+margin-top:8px;
+color:#166534;">
+                                        {{downtime}}
+                                    </div>
+
+                                </td>
+
+                                <td width="2%"></td>
+
+                                <td width="32%"
+                                    style="
+    background:#eff6ff;
+    border:1px solid #bfdbfe;
+    border-radius:12px;
+    padding:20px;
+    text-align:center;">
+
+                                    <div style="
+font-size:13px;
+color:#1d4ed8;">
+                                        Status Code
+                                    </div>
+
+                                    <div style="
+font-size:28px;
+font-weight:700;
+margin-top:8px;">
+                                        {{resolvedStatusCode}}
+                                    </div>
+
+                                </td>
+
+                                <td width="2%"></td>
+
+                                <td width="32%"
+                                    style="
+    background:#f0fdf4;
+    border:1px solid #bbf7d0;
+    border-radius:12px;
+    padding:20px;
+    text-align:center;">
+
+                                    <div style="
+font-size:13px;
+color:#15803d;">
+                                        Response Time
+                                    </div>
+
+                                    <div style="
+font-size:28px;
+font-weight:700;
+margin-top:8px;">
+                                        {{resolvedResponseTime}}ms
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        </table>
+
+                    </td>
+                </tr>
+
+                <!-- Availability Impact -->
+
+                <tr>
+                    <td style="padding:0 40px 24px;">
+
+                        <div style="
+background:#f8fafc;
+border:1px solid #e5e7eb;
+border-radius:16px;
+padding:24px;">
+
+                            <h3 style="
+margin-top:0;
+margin-bottom:20px;
+color:#111827;">
+                                Availability Impact
+                            </h3>
+
+                            <table width="100%">
+
+                                <tr>
+                                    <td style="padding:10px 0;color:#6b7280;">
+                                        Current Uptime
+                                    </td>
+
+                                    <td align="right">
+                                        <strong>{{uptimePercentage}}%</strong>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:10px 0;color:#6b7280;">
+                                        Incidents This Month
+                                    </td>
+
+                                    <td align="right">
+                                        <strong>{{monthlyIncidentCount}}</strong>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:10px 0;color:#6b7280;">
+                                        Average Response Time
+                                    </td>
+
+                                    <td align="right">
+                                        <strong>{{averageResponseTime}} ms</strong>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:10px 0;color:#6b7280;">
+                                        Successful Recovery Checks
+                                    </td>
+
+                                    <td align="right">
+                                        <strong>{{recoveryCount}}</strong>
+                                    </td>
+                                </tr>
+
+                            </table>
+
+                        </div>
+
+                    </td>
+                </tr>
+
+                <!-- Timeline -->
+
+                <tr>
+                    <td style="padding:0 40px 24px;">
+
+                        <div style="
+background:#f0fdf4;
+border:1px solid #bbf7d0;
+border-radius:16px;
+padding:24px;">
+
+                            <h3 style="
+margin-top:0;
+margin-bottom:20px;
+color:#166534;">
+                                Incident Timeline
+                            </h3>
+
+                            <table width="100%">
+
+                                <tr>
+                                    <td style="padding:10px 0;">
+                                        🟢 Recovery Confirmed
+                                    </td>
+
+                                    <td align="right">
+                                        {{resolvedAt}}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:10px 0;">
+                                        🔴 Incident Started
+                                    </td>
+
+                                    <td align="right">
+                                        {{startedAt}}
+                                    </td>
+                                </tr>
+
+                            </table>
+
+                        </div>
+
+                    </td>
+                </tr>
+
+                <!-- CTA -->
+
+                <tr>
+                    <td align="center" style="padding:10px 40px 40px;">
+
+                        <a href="{{dashboardUrl}}"
+                           style="
+display:inline-block;
+background:#16a34a;
+color:#ffffff;
+padding:16px 32px;
+border-radius:12px;
+font-weight:600;
+text-decoration:none;">
+                            Open Dashboard
+                        </a>
+
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+
+                <tr>
+                    <td style="
+background:#f8fafc;
+padding:24px;
+text-align:center;
+font-size:13px;
+color:#6b7280;">
+
+                        Monitoring remains active and Peeng will continue checking this service.
+
+                        <br><br>
+
+                        © 2026 Peeng Monitoring Platform
+
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
+    </tr>
+</table>
+</body>
+</html>
+
