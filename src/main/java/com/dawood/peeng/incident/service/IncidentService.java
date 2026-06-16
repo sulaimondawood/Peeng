@@ -49,7 +49,7 @@ public class IncidentService {
                 .build();
 
         Incident savedIncident = incidentRepository.save(newIncident);
-        notificationService.sendDownAlert();
+//        notificationService.sendDownAlert();
 
         return savedIncident;
 

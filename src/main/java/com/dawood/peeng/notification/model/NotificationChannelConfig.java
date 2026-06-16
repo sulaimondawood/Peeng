@@ -8,16 +8,14 @@ import com.dawood.peeng.tenant.model.Tenant;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Entity
-@Table(name = "notifications_channel")
+@Table(name = "notification_configs")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Setter
 @Getter
-public class Notification extends MetaData {
+public class NotificationChannelConfig extends MetaData {
     @Id
     @GeneratedValue
     private Long id;
@@ -32,6 +30,4 @@ public class Notification extends MetaData {
 
     private boolean enabled;
 
-    @ManyToOne
-    private Incident incident;
 }
