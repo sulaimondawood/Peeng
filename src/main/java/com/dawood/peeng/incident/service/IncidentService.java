@@ -57,7 +57,6 @@ public class IncidentService {
 
     public Incident resolveIncident(Monitor monitor) {
 
-        long startTime = System.currentTimeMillis();
 
         LocalDateTime now =LocalDateTime.now();
 
@@ -68,7 +67,7 @@ public class IncidentService {
                                 IncidentStatus.OPEN
                         )
                         .orElseThrow(() -> new IncidentNotFoundException(
-                                "Incident does not exist",
+                                "Open Incident does not exist",
                                 HttpStatus.NOT_FOUND,
                                 ErrorCode.NOT_FOUND));
 
@@ -83,11 +82,11 @@ public class IncidentService {
         );
 
         incident.setResolvedStatusCode(
-                HttpStatus.OK.value()
+               monitor.getLatestStatusCode()
         );
 
         incident.setResolvedResponseTimeMs(
-                System.currentTimeMillis() - startTime
+              monitor.getLatestResponseTimeMs()
         );
 
         return incidentRepository.save(incident);
