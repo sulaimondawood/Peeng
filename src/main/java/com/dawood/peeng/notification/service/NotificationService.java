@@ -24,24 +24,21 @@ public class NotificationService {
     private final EmailProducer emailProducer;
     private final IncidentRepository incidentRepository;
 
-    public void notifyIncidentOpened(UUID incidentId){
+    public void notifyIncidentOpened(UUID incidentId) {
 
         Incident openedIncident = incidentRepository.findById(incidentId)
-                .orElseThrow(()->new IncidentNotFoundException("Incident not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
+                .orElseThrow(() -> new IncidentNotFoundException("Incident not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
 
-        List<NotificationChannelConfig> configs = channelConfigRepository.findByTenant_Id(TenantContext.getTenantId());
+        List<NotificationChannelConfig> configs = channelConfigRepository.findByTenant_IdAndEnableTrue(openedIncident.getTenant().getId());
 
-        if(configs.isEmpty()){
-            emailProducer.sendDownAlert();
-        }else {
-            configs.forEach((config)->{
-                emailNotificationProvider.sendDownAlert(openedIncident, config);
-            });
-        }
+        configs.forEach((config) -> {
+            emailNotificationProvider.sendDownAlert(openedIncident, config);
+        });
+
 
     }
 
-    public void notifyIncidentResolved(UUID incidentId){
+    public void notifyIncidentResolved(UUID incidentId) {
 
     }
 

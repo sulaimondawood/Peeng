@@ -1,5 +1,6 @@
 package com.dawood.peeng.messaging.producers;
 
+import com.dawood.peeng.messaging.events.IncidentEvent;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
@@ -19,10 +20,6 @@ public class EmailProducer {
         RabbitMQConfig.EXCHANGE,
         RabbitMQConfig.EMAIL_ROUTING_KEY,
         event);
-  }
-
-  public void sendDownAlert(){
-
   }
 
 }

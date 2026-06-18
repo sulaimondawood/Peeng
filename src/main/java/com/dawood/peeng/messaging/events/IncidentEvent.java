@@ -2,6 +2,8 @@ package com.dawood.peeng.messaging.events;
 
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -28,4 +30,9 @@ public class IncidentEvent {
     private Integer year;
 
     private String destination;
+
+    private LocalDateTime startedAt;
+
+    private String dashboardIncidentUrl;
+
 }

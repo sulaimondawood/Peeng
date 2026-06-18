@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.dawood.peeng.notification.enums.NotificationChannel;
+import com.dawood.peeng.notification.model.NotificationChannelConfig;
+import com.dawood.peeng.notification.respository.NotificationChannelConfigRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -58,18 +61,19 @@ public class IdentityService {
   private final EmailProducer emailProducer;
   private final EmailVerificationTokenRepository tokenRepository;
   private final JwtService jwtService;
+  private final NotificationChannelConfigRepository notificationChannelConfigRepository;
 
   @Transactional
   public RegisterResponseDTO register(RegisterDTO payload) {
 
-    String normailizedEmail = payload.getEmail().trim().toLowerCase();
+    String normalizedEmail = payload.getEmail().trim().toLowerCase();
 
-    if (userRepository.existsByEmailIgnoreCase(normailizedEmail)) {
+    if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
       throw new EmailAlreadyExistsException("Email address already exists");
     }
 
     User newUser = User.builder()
-        .email(normailizedEmail)
+        .email(normalizedEmail)
         .passwordHash(passwordEncoder.encode(payload.getPassword()))
         .name(payload.getName())
         .build();
@@ -101,6 +105,16 @@ public class IdentityService {
         .build();
 
     membershipRepository.save(newMembership);
+
+    NotificationChannelConfig channelConfig = NotificationChannelConfig.builder()
+            .tenant(newTenant)
+            .channel(NotificationChannel.EMAIL)
+            .destination(payload.getEmail())
+            .enabled(true)
+            .build();
+
+    notificationChannelConfigRepository.save(channelConfig);
+
 
     SendVerificationEmailEvent event = SendVerificationEmailEvent.builder()
         .email(savedUser.getEmail())

@@ -6,15 +6,21 @@ import com.dawood.peeng.messaging.producers.NotificationProducer;
 import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.notification.model.NotificationChannelConfig;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Year;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
 public class EmailNotificationProvider implements NotificationProvider {
 
     private final NotificationProducer notificationProducer;
+
+    @Value("${app.client}")
+    private String frontendUrl;
+
 
     @Override
     public void sendDownAlert(Incident incident, NotificationChannelConfig config) {
@@ -24,17 +30,20 @@ public class EmailNotificationProvider implements NotificationProvider {
         IncidentEvent event = IncidentEvent.builder()
                 .workspaceName(incident.getTenant().getWorkspaceName())
                 .monitorName(monitor.getName())
-                .monitorUrl(monitor.getName())
+                .monitorUrl(monitor.getUrl())
                 .incidentId(incident.getId().toString())
                 .statusCode(incident.getInitialStatusCode())
                 .responseTimeMS(incident.getInitialResponseTimeMs())
                 .failureCount(incident.getFailureCount())
-                .errorMessage(incident.getLatestErrorMessage())
+                .errorMessage(Optional.ofNullable(incident.getLatestErrorMessage()).orElse("The monitor failed its health check."))
                 .year(Year.now().getValue())
                 .destination(config.getDestination())
+                .startedAt(incident.getStartedAt())
+                .dashboardIncidentUrl(frontendUrl+"/dashboard/incidents/"+incident.getId())
                 .build();
 
         notificationProducer.sendIncidentMail(event);
+
 
     }
 
