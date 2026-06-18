@@ -21,4 +21,13 @@ public class NotificationProducer {
 
     }
 
+    public void sendIncidentResolvedMail(IncidentEvent event) {
+
+        rabbitTemplate.convertAndSend(
+                RabbitMQConfig.EXCHANGE,
+                RabbitMQConfig.INCIDENT_RESOLVED_ROUTING_KEY,
+                event);
+
+    }
+
 }

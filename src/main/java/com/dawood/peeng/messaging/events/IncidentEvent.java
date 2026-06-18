@@ -35,4 +35,9 @@ public class IncidentEvent {
 
     private String dashboardIncidentUrl;
 
+    private Long durationSeconds;
+
+    private LocalDateTime resolvedAt;
+
+
 }
