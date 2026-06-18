@@ -39,7 +39,7 @@ public class User extends MetaData {
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
-  @Column(unique = true)
+  @Column(unique = true, nullable = false)
   private String email;
 
   @Column(nullable = false)

@@ -109,8 +109,8 @@ public class IdentityService {
     NotificationChannelConfig channelConfig = NotificationChannelConfig.builder()
             .tenant(newTenant)
             .channel(NotificationChannel.EMAIL)
-            .destination(payload.getEmail())
-            .enabled(true)
+            .destination(normalizedEmail)
+            .enabled(false)
             .build();
 
     notificationChannelConfigRepository.save(channelConfig);

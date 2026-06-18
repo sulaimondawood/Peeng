@@ -1,267 +1,138 @@
-
-<html>
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Incident Opened</title>
-</head>
 
-<body style="margin:0;padding:0;background:#f4f7fb;font-family:Inter,Arial,sans-serif;">
+    <style type="text/css">
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+        /* Force clients that support it to use the web font globally */
+        body, table, td, p, a, span {
+            font-family: 'Poppins', Inter, Arial, sans-serif !important;
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f7fb; font-family: 'Poppins', Inter, Arial, sans-serif;">
 
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
     <tr>
-        <td align="center" style="padding:40px 20px;">
+        <td align="center" style="padding: 40px 20px;">
 
-            <table role="presentation" width="700" cellspacing="0" cellpadding="0" border="0"
-                   style="background:#ffffff;border-radius:20px;overflow:hidden;">
+            <table role="presentation" width="700" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border-radius: 20px; overflow: hidden;">
 
-                <!-- Header -->
                 <tr>
-                    <td style="background:#0f172a;padding:28px 40px;">
-
-                        <table width="100%">
+                    <td style="background-color: #0f172a; padding: 28px 40px;">
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                             <tr>
-
                                 <td align="left">
-                                    <img src="{{logoUrl}}" width="140" alt="Peeng"/>
+                                    <img th:src="${logoUrl}" src="https://peeng.com/assets/logo.png" width="140" alt="Peeng" style="display: block; border: 0;" />
                                 </td>
-
                                 <td align="right">
-
-<span style="
-background:#fee2e2;
-color:#dc2626;
-padding:10px 16px;
-border-radius:999px;
-font-size:13px;
-font-weight:700;">
-INCIDENT OPENED
-</span>
-
+                                        <span style="background-color: #fee2e2; color: #dc2626; padding: 10px 16px; border-radius: 999px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                                            Incident Opened
+                                        </span>
                                 </td>
-
                             </tr>
                         </table>
-
                     </td>
                 </tr>
 
-                <!-- Hero -->
-
                 <tr>
-                    <td style="padding:40px;">
-
-                        <h1 style="
-margin:0;
-font-size:34px;
-color:#111827;
-font-weight:700;">
+                    <td style="padding: 40px 40px 24px 40px;">
+                        <h1 style="margin: 0; font-size: 34px; color: #111827; font-weight: 700; line-height: 40px;">
                             🚨 Service Outage Detected
                         </h1>
-
-                        <p style="
-margin-top:16px;
-font-size:16px;
-line-height:28px;
-color:#4b5563;">
-                            Peeng detected that one of your monitored services is currently unavailable.
-                            An incident has been automatically created.
+                        <p style="margin: 16px 0 0 0; font-size: 16px; line-height: 28px; color: #4b5563;">
+                            Peeng detected that one of your monitored services is currently unavailable. An incident has been automatically created.
                         </p>
-
                     </td>
                 </tr>
 
-                <!-- Monitor Card -->
-
                 <tr>
-                    <td style="padding:0 40px 24px;">
-
-                        <div style="
-background:#f8fafc;
-border:1px solid #e5e7eb;
-border-radius:16px;
-padding:24px;">
-
-                            <h3 style="margin-top:0;color:#111827;">
+                    <td style="padding: 0 40px 24px 40px;">
+                        <div style="background-color: #f8fafc; border: 1px solid #e5e7eb; border-radius: 16px; padding: 24px;">
+                            <h3 style="margin: 0 0 16px 0; color: #111827; font-size: 18px; font-weight: 600;">
                                 Monitor Information
                             </h3>
-
-                            <table width="100%">
-
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                                 <tr>
-                                    <td style="padding:8px 0;color:#6b7280;">Workspace</td>
-                                    <td align="right">{{workspaceName}}</td>
+                                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Workspace</td>
+                                    <td align="right" th:text="${workspaceName}" style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 500;">Default Workspace</td>
                                 </tr>
-
                                 <tr>
-                                    <td style="padding:8px 0;color:#6b7280;">Monitor</td>
-                                    <td align="right">{{monitorName}}</td>
+                                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Monitor</td>
+                                    <td align="right" th:text="${monitorName}" style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 500;">Production API</td>
                                 </tr>
-
                                 <tr>
-                                    <td style="padding:8px 0;color:#6b7280;">URL</td>
-                                    <td align="right">{{monitorUrl}}</td>
+                                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">URL</td>
+                                    <td align="right" th:text="${monitorUrl}" style="padding: 8px 0; color: #2563eb; font-size: 14px; font-weight: 500; word-break: break-all;">https://api.example.com</td>
                                 </tr>
-
                                 <tr>
-                                    <td style="padding:8px 0;color:#6b7280;">Incident ID</td>
-                                    <td align="right">#{{incidentId}}</td>
+                                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Incident ID</td>
+                                    <td align="right" th:text="${'#' + incidentId}" style="padding: 8px 0; color: #111827; font-size: 14px; font-weight: 600; font-family: monospace;">#12345</td>
                                 </tr>
-
                             </table>
-
                         </div>
-
                     </td>
                 </tr>
 
-                <!-- Metrics -->
-
                 <tr>
-                    <td style="padding:0 40px 24px;">
-
-                        <table width="100%">
+                    <td style="padding: 0 40px 24px 40px;">
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                             <tr>
-
-                                <td width="32%"
-                                    style="
-    background:#fff7ed;
-    border:1px solid #fed7aa;
-    border-radius:12px;
-    padding:20px;
-    text-align:center;">
-
-                                    <div style="font-size:13px;color:#9a3412;">
-                                        Status Code
+                                <td width="32%" valign="top" style="background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 20px; text-align: center;">
+                                    <div style="font-size: 13px; color: #9a3412; font-weight: 500;">Status Code</div>
+                                    <div th:text="${statusCode}" style="font-size: 28px; font-weight: 700; margin-top: 8px; color: #c2410c;">
+                                        500
                                     </div>
-
-                                    <div style="
-font-size:28px;
-font-weight:700;
-margin-top:8px;">
-                                        {{statusCode}}
-                                    </div>
-
                                 </td>
 
                                 <td width="2%"></td>
 
-                                <td width="32%"
-                                    style="
-    background:#fef2f2;
-    border:1px solid #fecaca;
-    border-radius:12px;
-    padding:20px;
-    text-align:center;">
-
-                                    <div style="font-size:13px;color:#991b1b;">
-                                        Response Time
+                                <td width="32%" valign="top" style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 20px; text-align: center;">
+                                    <div style="font-size: 13px; color: #991b1b; font-weight: 500;">Response Time</div>
+                                    <div th:text="${responseTime + 'ms'}" style="font-size: 28px; font-weight: 700; margin-top: 8px; color: #dc2626;">
+                                        0ms
                                     </div>
-
-                                    <div style="
-font-size:28px;
-font-weight:700;
-margin-top:8px;">
-                                        {{responseTime}}ms
-                                    </div>
-
                                 </td>
 
                                 <td width="2%"></td>
 
-                                <td width="32%"
-                                    style="
-    background:#eff6ff;
-    border:1px solid #bfdbfe;
-    border-radius:12px;
-    padding:20px;
-    text-align:center;">
-
-                                    <div style="font-size:13px;color:#1d4ed8;">
-                                        Failures
+                                <td width="32%" valign="top" style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 20px; text-align: center;">
+                                    <div style="font-size: 13px; color: #1d4ed8; font-weight: 500;">Failures</div>
+                                    <div th:text="${failureCount}" style="font-size: 28px; font-weight: 700; margin-top: 8px; color: #2563eb;">
+                                        1
                                     </div>
-
-                                    <div style="
-font-size:28px;
-font-weight:700;
-margin-top:8px;">
-                                        {{failureCount}}
-                                    </div>
-
                                 </td>
-
                             </tr>
                         </table>
-
                     </td>
                 </tr>
 
-                <!-- Error -->
-
                 <tr>
-                    <td style="padding:0 40px 24px;">
-
-                        <div style="
-background:#fef2f2;
-border:1px solid #fecaca;
-border-radius:12px;
-padding:20px;">
-
-                            <div style="
-font-size:14px;
-font-weight:600;
-margin-bottom:12px;
-color:#991b1b;">
+                    <td style="padding: 0 40px 24px 40px;">
+                        <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 20px;">
+                            <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #991b1b;">
                                 Latest Error
                             </div>
-
-                            <pre style="
-margin:0;
-white-space:pre-wrap;
-font-size:13px;
-line-height:22px;
-font-family:Consolas,monospace;
-color:#7f1d1d;">
-{{latestError}}
-</pre>
-
+                            <pre th:text="${latestError}" style="margin: 0; white-space: pre-wrap; font-size: 13px; line-height: 22px; font-family: Consolas, Monaco, monospace; color: #7f1d1d;">The monitor failed its health check.</pre>
                         </div>
-
                     </td>
                 </tr>
 
-                <!-- CTA -->
-
                 <tr>
-                    <td align="center" style="padding:10px 40px 40px;">
-
-                        <a href="{{dashboardUrl}}"
-                           style="
-display:inline-block;
-background:#58CCED;
-color:#ffffff;
-padding:16px 32px;
-border-radius:12px;
-font-weight:600;
-text-decoration:none;">
+                    <td align="center" style="padding: 16px 40px 40px 40px;">
+                        <a th:href="${dashboardUrl}" href="#" style="display: inline-block; background-color: #58CCED; color: #ffffff; padding: 16px 32px; border-radius: 12px; font-weight: 600; text-decoration: none; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(88, 204, 237, 0.2);">
                             View Incident
                         </a>
-
                     </td>
                 </tr>
 
-                <!-- Footer -->
-
                 <tr>
-                    <td style="
-background:#f8fafc;
-padding:24px;
-text-align:center;
-font-size:13px;
-color:#6b7280;">
-
-                        © 2026 Peeng Monitoring Platform
-
+                    <td style="background-color: #f8fafc; padding: 24px; text-align: center; font-size: 13px; color: #6b7280; border-top: 1px solid #e5e7eb;">
+                        &copy; 2026 Peeng Monitoring Platform
                     </td>
                 </tr>
 
