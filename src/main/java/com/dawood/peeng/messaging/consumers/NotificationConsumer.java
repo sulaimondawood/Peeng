@@ -22,7 +22,7 @@ public class NotificationConsumer {
     private final TemplateEngine templateEngine;
     private final EmailService emailService;
 
-    @Value("{app.client-url}")
+    @Value("${app.client-url}")
     private String clientUrl;
 
     private static DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a");
@@ -96,17 +96,16 @@ public class NotificationConsumer {
 
         ctx.setVariables(variables);
 
-        String subject = String.format("[Peeng] Incident Opened: [%s] %s is DOWN (%d)",
+        String subject = String.format("[Peeng] Incident Resolved: [%s] %s is BACK ONLINE",
                 event.getWorkspaceName(),
-                event.getMonitorName(),
-                event.getStatusCode()
+                event.getMonitorName()
         );
 
         try {
-            String body = templateEngine.process("incident-opened", ctx);
+            String body = templateEngine.process("incident-resolved", ctx);
             emailService.send(event.getDestination(), subject, body);
 
-            log.info("Successfully sent incident email notification to {}", event.getDestination());
+            log.info("Successfully sent incident recovery email notification to {}", event.getDestination());
 
         } catch (Exception e) {
             log.error("Failed to process or send email notification for incident ID: #{}", event.getIncidentId(), e);

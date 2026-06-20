@@ -18,7 +18,7 @@ public class EmailNotificationProvider implements NotificationProvider {
 
     private final NotificationProducer notificationProducer;
 
-    @Value("${app.client}")
+    @Value("${app.client-url}")
     private String frontendUrl;
 
 

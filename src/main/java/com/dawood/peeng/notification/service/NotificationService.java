@@ -29,7 +29,7 @@ public class NotificationService {
         Incident openedIncident = incidentRepository.findById(incidentId)
                 .orElseThrow(() -> new IncidentNotFoundException("Incident not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
 
-        List<NotificationChannelConfig> configs = channelConfigRepository.findByTenant_IdAndEnableTrue(openedIncident.getTenant().getId());
+        List<NotificationChannelConfig> configs = channelConfigRepository.findByTenant_IdAndEnabledTrue(openedIncident.getTenant().getId());
 
         configs.forEach((config) -> {
             emailNotificationProvider.sendDownAlert(openedIncident, config);

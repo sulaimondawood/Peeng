@@ -9,6 +9,6 @@ import java.util.UUID;
 
 public interface NotificationChannelConfigRepository extends JpaRepository<NotificationChannelConfig, UUID> {
 
-    List<NotificationChannelConfig> findByTenant_IdAndEnableTrue(UUID tenantId);
+    List<NotificationChannelConfig> findByTenant_IdAndEnabledTrue(UUID tenantId);
 
 }
