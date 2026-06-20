@@ -20,6 +20,13 @@ spring:
     port: 5672
     username: admin
     password: password
+    listener:
+      simple:
+        retry:
+          enabled: true
+          max-retries: 3
+          initial-interval: 2000ms # Wait 2 seconds before retry 1
+          multiplier: 2 #
 
   mail:
     host: ${SMTP_HOST}
