@@ -12,6 +12,7 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -25,7 +26,7 @@ public class NotificationConsumer {
     @Value("${app.client-url}")
     private String clientUrl;
 
-    private static DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a");
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a");
 
     @RabbitListener(queues = RabbitMQConfig.INCIDENT_OPENED_QUEUE)
     public void consumeIncidentOpenedNotification(IncidentEvent event) {
@@ -80,19 +81,18 @@ public class NotificationConsumer {
         String formattedResolved = event.getResolvedAt() != null
                 ? event.getResolvedAt().format(DATE_TIME_FORMATTER) : "-";
 
-        Map<String, Object> variables = Map.ofEntries(
-                Map.entry("logoUrl", clientUrl + "/logo.png"),
-                Map.entry("workspaceName", event.getWorkspaceName()),
-                Map.entry("monitorName", event.getMonitorName()),
-                Map.entry("monitorUrl", event.getMonitorUrl()),
-                Map.entry("incidentId", event.getIncidentId()),
-                Map.entry("startedAt", formattedStart),
-                Map.entry("resolvedAt", formattedResolved),
-                Map.entry("downtime", formatDuration(event.getDurationSeconds())),
-                Map.entry("resolvedStatusCode", event.getStatusCode()),
-                Map.entry("resolvedResponseTime", event.getResponseTimeMS()),
-                Map.entry("dashboardUrl", event.getDashboardIncidentUrl())
-        );
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("logoUrl", clientUrl + "/logo.png");
+        variables.put("workspaceName", event.getWorkspaceName());
+        variables.put("monitorName", event.getMonitorName());
+        variables.put("monitorUrl", event.getMonitorUrl());
+        variables.put("incidentId", event.getIncidentId());
+        variables.put("startedAt", formattedStart);
+        variables.put("resolvedAt", formattedResolved);
+        variables.put("downtime", formatDuration(event.getDurationSeconds()));
+        variables.put("resolvedStatusCode", event.getStatusCode());
+        variables.put("resolvedResponseTime", event.getResponseTimeMS());
+        variables.put("dashboardUrl", event.getDashboardIncidentUrl());
 
         ctx.setVariables(variables);
 
