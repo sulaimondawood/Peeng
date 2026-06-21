@@ -31,13 +31,13 @@ public class IncidentEvent {
 
     private String destination;
 
-    private LocalDateTime startedAt;
+    private String startedAt;
 
     private String dashboardIncidentUrl;
 
     private Long durationSeconds;
 
-    private LocalDateTime resolvedAt;
+    private String resolvedAt;
 
 
 }

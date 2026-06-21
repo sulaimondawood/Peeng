@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,16 +24,15 @@ public class IncidentService {
     @Transactional()
     public Incident openIncident(Monitor monitor) {
 
-        boolean alreadyOpen =
-                incidentRepository.existsByMonitor_IdAndStatus(
+        Optional<Incident> existingIncident =
+                incidentRepository.findByMonitor_IdAndStatus(
                         monitor.getId(),
                         IncidentStatus.OPEN
                 );
 
-        if (alreadyOpen) {
-            return null;
+        if (existingIncident.isPresent()) {
+            return existingIncident.get();
         }
-
 
         Incident newIncident = Incident.builder()
                 .monitor(monitor)
@@ -46,14 +46,14 @@ public class IncidentService {
                 .acknowledged(false)
                 .build();
 
-        return  incidentRepository.save(newIncident);
+        return incidentRepository.save(newIncident);
 
     }
 
     public Incident resolveIncident(Monitor monitor) {
 
 
-        LocalDateTime now =LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
 
         Incident incident =
                 incidentRepository
@@ -77,11 +77,11 @@ public class IncidentService {
         );
 
         incident.setResolvedStatusCode(
-               monitor.getLatestStatusCode()
+                monitor.getLatestStatusCode()
         );
 
         incident.setResolvedResponseTimeMs(
-              monitor.getLatestResponseTimeMs()
+                monitor.getLatestResponseTimeMs()
         );
 
         return incidentRepository.save(incident);

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +27,7 @@ public class NotificationConsumer {
     @Value("${app.client-url}")
     private String clientUrl;
 
+    private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a");
 
     @RabbitListener(queues = RabbitMQConfig.INCIDENT_OPENED_QUEUE)
@@ -75,11 +77,9 @@ public class NotificationConsumer {
 
         Context ctx = new Context();
 
-        String formattedStart = event.getStartedAt() != null
-                ? event.getStartedAt().format(DATE_TIME_FORMATTER) : "-";
+        String formattedStart = formatEventTimestamp(event.getStartedAt());
+        String formattedResolved = formatEventTimestamp(event.getResolvedAt());
 
-        String formattedResolved = event.getResolvedAt() != null
-                ? event.getResolvedAt().format(DATE_TIME_FORMATTER) : "-";
 
         Map<String, Object> variables = new HashMap<>();
         variables.put("logoUrl", clientUrl + "/logo.png");
@@ -121,6 +121,19 @@ public class NotificationConsumer {
         long seconds = totalSeconds % 60;
         if (minutes == 0) return seconds + "s";
         return String.format("%dm %ds", minutes, seconds);
+    }
+
+    private String formatEventTimestamp(String isoTimestampString) {
+        if (isoTimestampString == null || isoTimestampString.isBlank()) {
+            return "-";
+        }
+        try {
+            LocalDateTime dateTime = LocalDateTime.parse(isoTimestampString, ISO_FORMATTER);
+            return dateTime.format(DATE_TIME_FORMATTER);
+        } catch (Exception e) {
+            log.warn("Failed to parse timestamp string: {}", isoTimestampString);
+            return isoTimestampString; // Fallback directly to the raw text if parsing hits an issue
+        }
     }
 
 }

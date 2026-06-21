@@ -38,7 +38,7 @@ public class EmailNotificationProvider implements NotificationProvider {
                 .errorMessage(Optional.ofNullable(incident.getLatestErrorMessage()).orElse("The monitor failed its health check."))
                 .year(Year.now().getValue())
                 .destination(config.getDestination())
-                .startedAt(incident.getStartedAt())
+                .startedAt(incident.getStartedAt().toString())
                 .dashboardIncidentUrl(frontendUrl+"/dashboard/incidents/"+incident.getId())
                 .durationSeconds(incident.getDurationSeconds())
                 .build();
@@ -64,9 +64,9 @@ public class EmailNotificationProvider implements NotificationProvider {
                 .errorMessage(Optional.ofNullable(incident.getLatestErrorMessage()).orElse("The monitor failed its health check."))
                 .year(Year.now().getValue())
                 .destination(config.getDestination())
-                .startedAt(incident.getStartedAt())
+                .startedAt(incident.getStartedAt().toString())
                 .dashboardIncidentUrl(frontendUrl+"/dashboard/incidents/"+incident.getId())
-                .resolvedAt(incident.getResolvedAt())
+                .resolvedAt(incident.getResolvedAt().toString())
                 .durationSeconds(incident.getDurationSeconds())
                 .build();
 

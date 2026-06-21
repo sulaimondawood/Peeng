@@ -60,10 +60,10 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Binding incidentOpenedBinding(Queue incidentOpenedQueue, TopicExchange exchange) {
+    public Binding incidentOpenedBinding(Queue incidentOpenedQueue, TopicExchange topicExchange) {
         return BindingBuilder
                 .bind(incidentOpenedQueue)
-                .to(exchange)
+                .to(topicExchange)
                 .with(INCIDENT_OPENED_ROUTING_KEY);
     }
 
@@ -78,10 +78,10 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Binding incidentResolvedBinding(TopicExchange exchange, Queue incidentResolvedQueue){
+    public Binding incidentResolvedBinding(TopicExchange topicExchange, Queue incidentResolvedQueue){
         return BindingBuilder
                 .bind(incidentResolvedQueue)
-                .to(exchange)
+                .to(topicExchange)
                 .with(INCIDENT_RESOLVED_ROUTING_KEY);
     }
 
@@ -103,17 +103,17 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Binding emailBinding(Queue emailQueue, TopicExchange exchange) {
+    public Binding emailBinding(Queue emailQueue, TopicExchange topicExchange) {
         return BindingBuilder.bind(emailQueue)
-                .to(exchange)
+                .to(topicExchange)
                 .with(EMAIL_ROUTING_KEY);
     }
 
     @Bean
-    public Binding schedulerBinding(Queue schedulerQueue, TopicExchange exchange) {
+    public Binding schedulerBinding(Queue schedulerQueue, TopicExchange topicExchange) {
 
         return BindingBuilder.bind(schedulerQueue)
-                .to(exchange)
+                .to(topicExchange)
                 .with(SCHEDULER_ROUTING_KEY);
 
     }
