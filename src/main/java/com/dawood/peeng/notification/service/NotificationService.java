@@ -40,6 +40,11 @@ public class NotificationService {
 
     public void notifyIncidentResolved(UUID incidentId) {
 
+        Incident openedIncident = incidentRepository.findById(incidentId)
+                .orElseThrow(() -> new IncidentNotFoundException(
+                        "Incident not found",
+                        HttpStatus.NOT_FOUND,
+                        ErrorCode.NOT_FOUND));
     }
 
 }

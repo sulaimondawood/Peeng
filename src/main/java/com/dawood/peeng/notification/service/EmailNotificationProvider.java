@@ -40,6 +40,7 @@ public class EmailNotificationProvider implements NotificationProvider {
                 .destination(config.getDestination())
                 .startedAt(incident.getStartedAt())
                 .dashboardIncidentUrl(frontendUrl+"/dashboard/incidents/"+incident.getId())
+                .durationSeconds(incident.getDurationSeconds())
                 .build();
 
         notificationProducer.sendIncidentMail(event);
@@ -49,6 +50,27 @@ public class EmailNotificationProvider implements NotificationProvider {
 
     @Override
     public void sendRecoveryAlert(Incident incident, NotificationChannelConfig config) {
+
+        Monitor monitor = incident.getMonitor();
+
+        IncidentEvent event = IncidentEvent.builder()
+                .workspaceName(incident.getTenant().getWorkspaceName())
+                .monitorName(monitor.getName())
+                .monitorUrl(monitor.getUrl())
+                .incidentId(incident.getId().toString())
+                .statusCode(incident.getInitialStatusCode())
+                .responseTimeMS(incident.getInitialResponseTimeMs())
+                .failureCount(incident.getFailureCount())
+                .errorMessage(Optional.ofNullable(incident.getLatestErrorMessage()).orElse("The monitor failed its health check."))
+                .year(Year.now().getValue())
+                .destination(config.getDestination())
+                .startedAt(incident.getStartedAt())
+                .dashboardIncidentUrl(frontendUrl+"/dashboard/incidents/"+incident.getId())
+                .resolvedAt(incident.getResolvedAt())
+                .durationSeconds(incident.getDurationSeconds())
+                .build();
+
+        notificationProducer.sendIncidentMail(event);
 
     }
 }
