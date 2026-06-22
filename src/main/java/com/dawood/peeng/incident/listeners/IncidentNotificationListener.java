@@ -6,6 +6,8 @@ import com.dawood.peeng.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
 @RequiredArgsConstructor
@@ -13,12 +15,12 @@ public class IncidentNotificationListener {
 
     private final NotificationService notificationService;
 
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onIncidentOpened(IncidentOpenedEvent event) {
         notificationService.notifyIncidentOpened(event.getIncidentId());
     }
 
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onIncidentResolved(IncidentResolvedEvent event) {
         notificationService.notifyIncidentResolved(event.getIncidentId());
     }
