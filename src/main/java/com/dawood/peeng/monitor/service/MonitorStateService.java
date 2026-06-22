@@ -6,6 +6,7 @@ import com.dawood.peeng.incident.events.IncidentOpenedEvent;
 import com.dawood.peeng.incident.models.Incident;
 import com.dawood.peeng.incident.service.IncidentService;
 import com.dawood.peeng.monitor.repository.MonitorRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -13,9 +14,11 @@ import com.dawood.peeng.monitor.enums.MonitorStatus;
 import com.dawood.peeng.monitor.models.Monitor;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MonitorStateService {
 
     private final IncidentService incidentService;
@@ -36,17 +39,15 @@ public class MonitorStateService {
 
             monitorRepository.save(monitor);
 
-
         }
 
     }
 
+    @Transactional
     public void handleFailure(Monitor monitor) {
 
         if (monitor.getConsecutiveFailures() >= monitor.getFailureThreshold()) {
-
             if (monitor.getStatus() != MonitorStatus.DOWN) {
-
                 monitor.setStatus(MonitorStatus.DOWN);
                 monitor.setLastStatusChangeAt(
                         LocalDateTime.now());
@@ -58,9 +59,17 @@ public class MonitorStateService {
 
             Incident openedIncident = incidentService.openIncident(monitor);
 
-            applicationEventPublisher.publishEvent(new IncidentOpenedEvent(openedIncident.getId()));
+            if (openedIncident != null) {
+                applicationEventPublisher.publishEvent(new IncidentOpenedEvent(openedIncident.getId()));
+            }
 
+        }else if (monitor.getStatus() == MonitorStatus.UP) {
+            log.info("Monitor {} is degrading. Transitioning to PENDING state.", monitor.getName());
 
+            monitor.setStatus(MonitorStatus.PENDING);
+            monitor.setLastStatusChangeAt(LocalDateTime.now());
+
+            monitorRepository.save(monitor);
         }
 
     }

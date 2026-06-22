@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.client.RestClientException;
 
 import com.dawood.peeng.monitor.models.Monitor;
@@ -30,12 +32,13 @@ public class MonitorCheckService {
     public void processSuccess(Monitor monitor, long startTime, ResponseEntity<Void> response) {
 
         long responseTime = System.currentTimeMillis() - startTime;
+        LocalDateTime now = LocalDateTime.now();
+        int statusCode = response.getStatusCode().value();
 
         MonitorCheck monitorCheck = MonitorCheck.builder()
                 .monitor(monitor)
                 .successful(true)
-                .statusCode(response.getStatusCode()
-                        .value())
+                .statusCode(statusCode)
                 .responseTimeMs(responseTime)
                 .checkedAt(LocalDateTime.now())
                 .build();
@@ -43,18 +46,26 @@ public class MonitorCheckService {
         monitorCheckRepository.save(monitorCheck);
 
         monitor.setNextCheckAt(
-                monitor.getNextCheckAt().plusSeconds(monitor.getIntervalInSeconds()));
+                now.plusSeconds(monitor.getIntervalInSeconds())
+              );
         monitor.setConsecutiveFailures(0);
         monitor.setConsecutiveSuccesses(
                 monitor.getConsecutiveSuccesses() + 1);
-        monitor.setLatestStatusCode(response.getStatusCode().value());
+        monitor.setLatestStatusCode(statusCode);
         monitor.setLatestResponseTimeMs(responseTime);
         monitor.setLastCheckedAt(LocalDateTime.now());
         monitor.setLastSuccessfulCheckAt(LocalDateTime.now());
 
         Monitor savedMonitor = monitorRepository.save(monitor);
 
-        monitorStateService.handleSuccess(savedMonitor);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                monitorStateService.handleSuccess(savedMonitor);
+
+            }
+        });
+
 
     }
 
@@ -63,7 +74,7 @@ public class MonitorCheckService {
                                String message) {
 
         long responseTime = System.currentTimeMillis() - startTime;
-
+        LocalDateTime now = LocalDateTime.now();
 
         Integer statusCode = Optional.ofNullable(response)
                 .map((res) -> res.getStatusCode().value())
@@ -81,7 +92,7 @@ public class MonitorCheckService {
         monitorCheckRepository.save(monitorCheck);
 
         monitor.setNextCheckAt(
-                monitor.getNextCheckAt().plusSeconds(monitor.getIntervalInSeconds()));
+                now.plusSeconds(monitor.getIntervalInSeconds()));
         monitor.setConsecutiveFailures(monitor.getConsecutiveFailures() + 1);
         monitor.setConsecutiveSuccesses(
                 0);
@@ -91,7 +102,13 @@ public class MonitorCheckService {
 
         Monitor savedMonitor = monitorRepository.save(monitor);
 
-        monitorStateService.handleFailure(savedMonitor);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                monitorStateService.handleFailure(savedMonitor);
+
+            }
+        });
 
     }
 
