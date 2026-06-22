@@ -47,7 +47,11 @@ public class MonitorStateService {
     public void handleFailure(Monitor monitor) {
 
         if (monitor.getConsecutiveFailures() >= monitor.getFailureThreshold()) {
-            if (monitor.getStatus() != MonitorStatus.DOWN) {
+            boolean wasAlreadyDown = monitor.getStatus() == MonitorStatus.DOWN;
+
+            if(!wasAlreadyDown){
+                log.warn("Monitor {} breached failure threshold. Transitioning to DOWN.", monitor.getName());
+
                 monitor.setStatus(MonitorStatus.DOWN);
                 monitor.setLastStatusChangeAt(
                         LocalDateTime.now());
@@ -59,17 +63,20 @@ public class MonitorStateService {
 
             Incident openedIncident = incidentService.openIncident(monitor);
 
-            if (openedIncident != null) {
+            if (!wasAlreadyDown && openedIncident != null) {
+                log.info("Firing fresh incident alert for monitor: {}", monitor.getName());
                 applicationEventPublisher.publishEvent(new IncidentOpenedEvent(openedIncident.getId()));
+
             }
+
 
         }else if (monitor.getStatus() == MonitorStatus.UP) {
             log.info("Monitor {} is degrading. Transitioning to PENDING state.", monitor.getName());
 
             monitor.setStatus(MonitorStatus.PENDING);
             monitor.setLastStatusChangeAt(LocalDateTime.now());
-
             monitorRepository.save(monitor);
+
         }
 
     }
