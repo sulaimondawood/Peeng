@@ -9,7 +9,6 @@ import com.dawood.peeng.monitor.models.Monitor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -21,7 +20,6 @@ public class IncidentService {
 
     private final IncidentRepository incidentRepository;
 
-    @Transactional()
     public Incident openIncident(Monitor monitor) {
 
         Optional<Incident> existingIncident =

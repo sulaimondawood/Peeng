@@ -65,6 +65,7 @@ public class MonitorStateService {
 
             if (!wasAlreadyDown && openedIncident != null) {
                 log.info("Firing fresh incident alert for monitor: {}", monitor.getName());
+                log.info("Opened incident ID: {}", openedIncident.getId());
                 applicationEventPublisher.publishEvent(new IncidentOpenedEvent(openedIncident.getId()));
 
             }

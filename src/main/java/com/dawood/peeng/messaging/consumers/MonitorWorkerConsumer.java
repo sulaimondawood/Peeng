@@ -31,6 +31,8 @@ public class MonitorWorkerConsumer {
     @RabbitListener(queues = RabbitMQConfig.SCHEDULER_ROUTING_QUEUE)
     public void consumeScheduledMonitor(UUID monitorId) {
 
+        log.info(monitorId.toString());
+
         Monitor scheduledMonitor = null;
 
         try {
@@ -56,6 +58,7 @@ public class MonitorWorkerConsumer {
             monitorCheckService.processSuccess(scheduledMonitor, start, response);
 
         } catch (RestClientException e) {
+            log.info(scheduledMonitor.getName());
             log.warn("Ping failed for monitor {}: {}", scheduledMonitor.getName(), e.getMessage());
             monitorCheckService.processFailure(scheduledMonitor, start, response, e.getMessage());
 

@@ -9,6 +9,7 @@ import com.dawood.peeng.notification.model.NotificationChannelConfig;
 import com.dawood.peeng.notification.respository.NotificationChannelConfigRepository;
 import com.dawood.peeng.tenant.context.TenantContext;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class NotificationService {
 
     private final NotificationChannelConfigRepository channelConfigRepository;
@@ -32,6 +34,7 @@ public class NotificationService {
         List<NotificationChannelConfig> configs = channelConfigRepository.findByTenant_IdAndEnabledTrue(openedIncident.getTenant().getId());
 
         configs.forEach((config) -> {
+            log.info("NOtification Service Open incident ID: {}", openedIncident.getId());
             emailNotificationProvider.sendDownAlert(openedIncident, config);
         });
 

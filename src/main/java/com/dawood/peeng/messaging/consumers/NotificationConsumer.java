@@ -33,6 +33,8 @@ public class NotificationConsumer {
     @RabbitListener(queues = RabbitMQConfig.INCIDENT_OPENED_QUEUE)
     public void consumeIncidentOpenedNotification(IncidentEvent event) {
 
+        log.info("Opened incident sent to destination email: {}", event.getDestination());
+
         Context ctx = new Context();
 
         Map<String, Object> variables = Map.of(
@@ -55,6 +57,8 @@ public class NotificationConsumer {
                 event.getMonitorName(),
                 event.getStatusCode()
         );
+
+        System.out.println(subject);
 
         try {
             String body = templateEngine.process("incident-opened", ctx);

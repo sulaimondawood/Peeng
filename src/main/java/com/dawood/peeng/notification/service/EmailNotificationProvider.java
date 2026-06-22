@@ -6,6 +6,7 @@ import com.dawood.peeng.messaging.producers.NotificationProducer;
 import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.notification.model.NotificationChannelConfig;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,7 @@ import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class EmailNotificationProvider implements NotificationProvider {
 
     private final NotificationProducer notificationProducer;
@@ -43,6 +45,7 @@ public class EmailNotificationProvider implements NotificationProvider {
                 .durationSeconds(incident.getDurationSeconds())
                 .build();
 
+        log.info("Send Down Alert for Opened incident ID: {}", monitor.getId());
         notificationProducer.sendIncidentMail(event);
 
 

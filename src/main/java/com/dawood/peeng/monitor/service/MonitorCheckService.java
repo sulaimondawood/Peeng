@@ -73,6 +73,7 @@ public class MonitorCheckService {
     public void processFailure(Monitor monitor, long startTime, ResponseEntity<Void> response,
                                String message) {
 
+
         long responseTime = System.currentTimeMillis() - startTime;
         LocalDateTime now = LocalDateTime.now();
 

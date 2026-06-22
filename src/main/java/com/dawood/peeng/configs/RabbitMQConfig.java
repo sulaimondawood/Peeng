@@ -1,6 +1,8 @@
 package com.dawood.peeng.configs;
 
 import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
@@ -22,11 +24,12 @@ public class RabbitMQConfig {
     public static final String EMAIL_QUEUE = "peeng.email.verification.queue";
     public static final String EMAIL_ROUTING_KEY = "peeng.email.verification";
 
-    public static final String INCIDENT_OPENED_QUEUE = "incident-opened-queue";
-    public static final String INCIDENT_CLOSED_QUEUE = "incident-closed-queue";
+    public static final String INCIDENT_OPENED_QUEUE = "incident.opened.queue";
+    public static final String INCIDENT_CLOSED_QUEUE = "incident.closed.queue";
     public static final String INCIDENT_OPENED_ROUTING_KEY = "incident.opened";
-    public static final String INCIDENT_RESOLVED_ROUTING_KEY = "incident.resolved";
+    public static final String INCIDENT_CLOSED_ROUTING_KEY = "incident.closed";
 
+    .
 
     @Bean
     public TopicExchange topicExchange() {
@@ -53,19 +56,14 @@ public class RabbitMQConfig {
 
     @Bean
     public Queue incidentOpenedQueue() {
+
         return QueueBuilder.durable(INCIDENT_OPENED_QUEUE)
                 .deadLetterExchange(DLX_EXCHANGE)
                 .deadLetterRoutingKey(DLX_ROUTING_KEY)
                 .build();
     }
 
-    @Bean
-    public Binding incidentOpenedBinding(Queue incidentOpenedQueue, TopicExchange topicExchange) {
-        return BindingBuilder
-                .bind(incidentOpenedQueue)
-                .to(topicExchange)
-                .with(INCIDENT_OPENED_ROUTING_KEY);
-    }
+
 
     @Bean
     public Queue incidentResolvedQueue() {
@@ -82,7 +80,7 @@ public class RabbitMQConfig {
         return BindingBuilder
                 .bind(incidentResolvedQueue)
                 .to(topicExchange)
-                .with(INCIDENT_RESOLVED_ROUTING_KEY);
+                .with(INCIDENT_CLOSED_ROUTING_KEY);
     }
 
     @Bean
@@ -110,6 +108,13 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public Binding incidentOpenedBinding(Queue incidentOpenedQueue, TopicExchange topicExchange) {
+        return BindingBuilder.bind(incidentOpenedQueue)
+                .to(topicExchange)
+                .with(INCIDENT_OPENED_ROUTING_KEY);
+    }
+
+    @Bean
     public Binding schedulerBinding(Queue schedulerQueue, TopicExchange topicExchange) {
 
         return BindingBuilder.bind(schedulerQueue)
@@ -119,8 +124,22 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public MessageConverter SimpleMessageConverter() {
+    public MessageConverter simpleMessageConverter() {
         return new Jackson2JsonMessageConverter();
+    }
+
+    @Bean
+    public RabbitTemplate rabbitTemplate(
+            ConnectionFactory connectionFactory,
+            MessageConverter converter
+    ) {
+
+        RabbitTemplate template =
+                new RabbitTemplate(connectionFactory);
+
+        template.setMessageConverter(converter);
+
+        return template;
     }
 
 }
