@@ -5,6 +5,7 @@ import com.dawood.peeng.monitor.enums.MonitorType;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.validator.constraints.URL;
 
@@ -12,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 @Getter
 @Setter
+@NoArgsConstructor
 public class CreateMonitorRequest {
 
   @NotBlank(message = "Provide the Monitor name")
