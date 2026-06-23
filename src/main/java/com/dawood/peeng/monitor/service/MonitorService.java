@@ -1,12 +1,5 @@
 package com.dawood.peeng.monitor.service;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-
 import com.dawood.peeng.common.enums.ErrorCode;
 import com.dawood.peeng.identity.exceptions.UserNotFoundException;
 import com.dawood.peeng.identity.models.User;
@@ -20,10 +13,14 @@ import com.dawood.peeng.tenant.exceptions.TenantException;
 import com.dawood.peeng.tenant.model.Tenant;
 import com.dawood.peeng.tenant.repository.TenantRepository;
 import com.dawood.peeng.utils.SlugUtils;
-import com.dawood.peeng.utils.TimeConverterUtils;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -82,4 +79,5 @@ public class MonitorService {
 
   }
 
+//  public
 }

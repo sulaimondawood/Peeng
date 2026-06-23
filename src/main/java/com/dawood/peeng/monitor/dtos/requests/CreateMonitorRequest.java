@@ -1,25 +1,17 @@
 package com.dawood.peeng.monitor.dtos.requests;
 
-import java.util.concurrent.TimeUnit;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.validation.constraints.NotNull;
-import org.hibernate.validator.constraints.URL;
-
 import com.dawood.peeng.monitor.enums.MonitorHttpType;
 import com.dawood.peeng.monitor.enums.MonitorType;
-
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.validator.constraints.URL;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+import java.util.concurrent.TimeUnit;
+
+@Getter
+@Setter
 public class CreateMonitorRequest {
 
   @NotBlank(message = "Provide the Monitor name")
@@ -29,31 +21,21 @@ public class CreateMonitorRequest {
   @URL(message = "Provide a valid url")
   private String url;
 
-  @NotNull(message = "Provide the HTTP method")
-  @JsonProperty(defaultValue = "GET") // Tells Jackson what to use if missing
-  private MonitorHttpType method;
+  private MonitorHttpType method = MonitorHttpType.GET;
+  private MonitorType monitorType = MonitorType.HTTP;
 
-  @JsonProperty(defaultValue = "HTTP")
-  private MonitorType monitorType;
+  private Long intervalValue = 60L;
 
-  @JsonProperty(defaultValue = "60")
-  private Long intervalValue;
+  private TimeUnit intervalUnit = TimeUnit.SECONDS;
 
-  @JsonProperty(defaultValue = "SECONDS")
-  private TimeUnit intervalUnit;
+  private Long timeoutSeconds = 10L;
 
-  @JsonProperty(defaultValue = "10")
-  private Long timeoutSeconds;
-
-  @JsonProperty(defaultValue = "3")
-  private Integer failureThreshold;
+  private Integer failureThreshold = 3;
 
   @Max(message = "Threshold value cannot exceed 3", value = 3)
-  @JsonProperty(defaultValue = "1")
-  private Integer recoveryThreshold;
+  private Integer recoveryThreshold = 1;
 
-  @JsonProperty(defaultValue = "200")
-  private Integer expectedStatusCode;
+  private Integer expectedStatusCode = 200;
 
   private String expectedKeyword;
 
