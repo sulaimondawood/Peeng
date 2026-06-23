@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -24,35 +25,38 @@ public class MonitorStateService {
     private final MonitorRepository monitorRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleSuccess(Monitor monitor) {
         boolean needsRecovery = monitor.getStatus() == MonitorStatus.DOWN
                 || monitor.getStatus() == MonitorStatus.PENDING;
 
         if (needsRecovery && monitor.getConsecutiveSuccesses() >= monitor.getRecoveryThreshold()) {
             boolean wasIncidentOpen = monitor.isIncidentOpen();
-            Incident resolvedIncident = null;
-            if (wasIncidentOpen) {
-                resolvedIncident = incidentService.resolveIncident(monitor);
-            }
 
             monitor.setStatus(MonitorStatus.UP);
             monitor.setLastStatusChangeAt(LocalDateTime.now());
             monitor.setIncidentOpen(false);
 
-            monitorRepository.save(monitor);
+            monitorRepository.saveAndFlush(monitor);
+
+            Incident resolvedIncident = null;
+            if (wasIncidentOpen) {
+                resolvedIncident = incidentService.resolveIncident(monitor);
+            }
 
             if (resolvedIncident != null) {
                 log.info("Firing recovery notification alert for monitor: {}", monitor.getName());
                 applicationEventPublisher.publishEvent(new IncidentResolvedEvent(resolvedIncident.getId()));
             }
-
-
+            return;
         }
 
+        log.info("Monitor {} passed health check. Progressing toward recovery threshold ({}).",
+                monitor.getName(), monitor.getConsecutiveSuccesses());
+        monitorRepository.saveAndFlush(monitor);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleFailure(Monitor monitor) {
 
         if (monitor.getConsecutiveFailures() >= monitor.getFailureThreshold()) {
