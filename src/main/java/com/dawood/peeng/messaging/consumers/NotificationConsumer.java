@@ -32,9 +32,6 @@ public class NotificationConsumer {
 
     @RabbitListener(queues = RabbitMQConfig.INCIDENT_OPENED_QUEUE)
     public void consumeIncidentOpenedNotification(IncidentEvent event) {
-
-        log.info("Opened incident sent to destination email: {}", event.getDestination());
-
         Context ctx = new Context();
 
         Map<String, Object> variables = Map.of(
@@ -44,7 +41,7 @@ public class NotificationConsumer {
                 "monitorUrl", event.getMonitorUrl(),
                 "incidentId", event.getIncidentId(),
                 "statusCode", event.getStatusCode(),
-                "responseTime", event.getResponseTimeMS(),
+                "responseTime", formatDurationMS(event.getResponseTimeMS()),
                 "failureCount", event.getFailureCount(),
                 "latestError", event.getErrorMessage(),
                 "dashboardUrl", event.getDashboardIncidentUrl()
@@ -58,12 +55,9 @@ public class NotificationConsumer {
                 event.getStatusCode()
         );
 
-        System.out.println(subject);
-
         try {
             String body = templateEngine.process("incident-opened", ctx);
             emailService.send(event.getDestination(), subject, body);
-
             log.info("Successfully sent incident email notification to {}", event.getDestination());
 
         } catch (Exception e) {
@@ -76,14 +70,10 @@ public class NotificationConsumer {
 
     @RabbitListener(queues = RabbitMQConfig.INCIDENT_CLOSED_QUEUE)
     public void consumeIncidentResolvedNotification(IncidentEvent event) {
-
-        log.info("Received incident resolved event for monitor: {}", event.getMonitorName());
-
         Context ctx = new Context();
 
         String formattedStart = formatEventTimestamp(event.getStartedAt());
         String formattedResolved = formatEventTimestamp(event.getResolvedAt());
-
 
         Map<String, Object> variables = new HashMap<>();
         variables.put("logoUrl", clientUrl + "/logo.png");
@@ -95,7 +85,7 @@ public class NotificationConsumer {
         variables.put("resolvedAt", formattedResolved);
         variables.put("downtime", formatDuration(event.getDurationSeconds()));
         variables.put("resolvedStatusCode", event.getStatusCode());
-        variables.put("resolvedResponseTime", event.getResponseTimeMS());
+        variables.put("resolvedResponseTime", formatDurationMS(event.getResponseTimeMS()));
         variables.put("dashboardUrl", event.getDashboardIncidentUrl());
 
         ctx.setVariables(variables);
@@ -108,7 +98,6 @@ public class NotificationConsumer {
         try {
             String body = templateEngine.process("incident-resolved", ctx);
             emailService.send(event.getDestination(), subject, body);
-
             log.info("Successfully sent incident recovery email notification to {}", event.getDestination());
 
         } catch (Exception e) {
@@ -125,6 +114,30 @@ public class NotificationConsumer {
         long seconds = totalSeconds % 60;
         if (minutes == 0) return seconds + "s";
         return String.format("%dm %ds", minutes, seconds);
+    }
+
+    private String formatDurationMS(Long totalMs) {
+        if (totalMs == null || totalMs == 0) return "0ms";
+
+        long minutes = totalMs / 60000;
+        long remainderAfterMinutes = totalMs % 60000;
+
+        long seconds = remainderAfterMinutes / 1000;
+        long milliseconds = remainderAfterMinutes % 1000;
+
+        StringBuilder result = new StringBuilder();
+
+        if (minutes > 0) {
+            result.append(minutes).append("m ");
+        }
+        if (seconds > 0 || minutes > 0) {
+            result.append(seconds).append("s ");
+        }
+        if (milliseconds > 0 || result.length() == 0) {
+            result.append(milliseconds).append("ms");
+        }
+
+        return result.toString().trim();
     }
 
     private String formatEventTimestamp(String isoTimestampString) {

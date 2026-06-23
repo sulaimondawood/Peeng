@@ -43,7 +43,6 @@ public class EmailConsumer {
 
     } catch (Exception e) {
       log.error("Error processing email template or sending message", e);
-
       throw e;
     }
 

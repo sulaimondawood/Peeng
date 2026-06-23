@@ -1,20 +1,19 @@
 package com.dawood.peeng.monitor.service;
 
-import java.time.LocalDateTime;
-
 import com.dawood.peeng.incident.events.IncidentOpenedEvent;
+import com.dawood.peeng.incident.events.IncidentResolvedEvent;
 import com.dawood.peeng.incident.models.Incident;
 import com.dawood.peeng.incident.service.IncidentService;
+import com.dawood.peeng.monitor.enums.MonitorStatus;
+import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.monitor.repository.MonitorRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-
-import com.dawood.peeng.monitor.enums.MonitorStatus;
-import com.dawood.peeng.monitor.models.Monitor;
-
-import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -25,19 +24,29 @@ public class MonitorStateService {
     private final MonitorRepository monitorRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
 
+    @Transactional
     public void handleSuccess(Monitor monitor) {
-
         boolean needsRecovery = monitor.getStatus() == MonitorStatus.DOWN
                 || monitor.getStatus() == MonitorStatus.PENDING;
 
-        if (needsRecovery
-                && monitor.getConsecutiveSuccesses() >= monitor.getRecoveryThreshold()) {
+        if (needsRecovery && monitor.getConsecutiveSuccesses() >= monitor.getRecoveryThreshold()) {
+            boolean wasIncidentOpen = monitor.isIncidentOpen();
+            Incident resolvedIncident = null;
+            if (wasIncidentOpen) {
+                resolvedIncident = incidentService.resolveIncident(monitor);
+            }
 
             monitor.setStatus(MonitorStatus.UP);
             monitor.setLastStatusChangeAt(LocalDateTime.now());
             monitor.setIncidentOpen(false);
 
             monitorRepository.save(monitor);
+
+            if (resolvedIncident != null) {
+                log.info("Firing recovery notification alert for monitor: {}", monitor.getName());
+                applicationEventPublisher.publishEvent(new IncidentResolvedEvent(resolvedIncident.getId()));
+            }
+
 
         }
 
@@ -47,9 +56,7 @@ public class MonitorStateService {
     public void handleFailure(Monitor monitor) {
 
         if (monitor.getConsecutiveFailures() >= monitor.getFailureThreshold()) {
-            boolean wasAlreadyDown = monitor.getStatus() == MonitorStatus.DOWN;
-
-            if(!wasAlreadyDown){
+            if (!monitor.isIncidentOpen()) {
                 log.warn("Monitor {} breached failure threshold. Transitioning to DOWN.", monitor.getName());
 
                 monitor.setStatus(MonitorStatus.DOWN);
@@ -59,19 +66,15 @@ public class MonitorStateService {
 
                 monitorRepository.save(monitor);
 
-            }
-
-            Incident openedIncident = incidentService.openIncident(monitor);
-
-            if (!wasAlreadyDown && openedIncident != null) {
+                Incident openedIncident = incidentService.openIncident(monitor);
                 log.info("Firing fresh incident alert for monitor: {}", monitor.getName());
-                log.info("Opened incident ID: {}", openedIncident.getId());
                 applicationEventPublisher.publishEvent(new IncidentOpenedEvent(openedIncident.getId()));
-
             }
+            return;
 
+        }
 
-        }else if (monitor.getStatus() == MonitorStatus.UP) {
+        if (monitor.getStatus() == MonitorStatus.UP) {
             log.info("Monitor {} is degrading. Transitioning to PENDING state.", monitor.getName());
 
             monitor.setStatus(MonitorStatus.PENDING);

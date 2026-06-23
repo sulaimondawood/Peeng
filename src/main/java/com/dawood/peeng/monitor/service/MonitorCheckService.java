@@ -1,8 +1,10 @@
 package com.dawood.peeng.monitor.service;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-
+import com.dawood.peeng.monitor.models.Monitor;
+import com.dawood.peeng.monitor.models.MonitorCheck;
+import com.dawood.peeng.monitor.repository.MonitorCheckRepository;
+import com.dawood.peeng.monitor.repository.MonitorRepository;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -10,14 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.web.client.RestClientException;
 
-import com.dawood.peeng.monitor.models.Monitor;
-import com.dawood.peeng.monitor.models.MonitorCheck;
-import com.dawood.peeng.monitor.repository.MonitorCheckRepository;
-import com.dawood.peeng.monitor.repository.MonitorRepository;
-
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service

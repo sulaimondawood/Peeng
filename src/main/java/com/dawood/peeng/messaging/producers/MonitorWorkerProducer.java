@@ -18,13 +18,10 @@ public class MonitorWorkerProducer {
   private final RabbitTemplate rabbitTemplate;
 
   public void sendScheduledMonitor(UUID monitorId) {
-
     rabbitTemplate.convertAndSend(
         RabbitMQConfig.EXCHANGE,
         RabbitMQConfig.SCHEDULER_ROUTING_KEY,
         monitorId);
-
-    log.info("Sent Scheduled Monitor ID: " + monitorId.toString() + " to Scheduler Consumer Worker");
 
   }
 

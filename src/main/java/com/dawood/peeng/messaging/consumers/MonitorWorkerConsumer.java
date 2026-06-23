@@ -1,9 +1,13 @@
 package com.dawood.peeng.messaging.consumers;
 
-import java.util.UUID;
-
 import com.dawood.peeng.common.enums.ErrorCode;
+import com.dawood.peeng.configs.RabbitMQConfig;
 import com.dawood.peeng.monitor.exceptions.MonitorNotFoundException;
+import com.dawood.peeng.monitor.models.Monitor;
+import com.dawood.peeng.monitor.repository.MonitorRepository;
+import com.dawood.peeng.monitor.service.MonitorCheckService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,13 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-import com.dawood.peeng.configs.RabbitMQConfig;
-import com.dawood.peeng.monitor.models.Monitor;
-import com.dawood.peeng.monitor.repository.MonitorRepository;
-import com.dawood.peeng.monitor.service.MonitorCheckService;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -30,9 +28,6 @@ public class MonitorWorkerConsumer {
 
     @RabbitListener(queues = RabbitMQConfig.SCHEDULER_ROUTING_QUEUE)
     public void consumeScheduledMonitor(UUID monitorId) {
-
-        log.info(monitorId.toString());
-
         Monitor scheduledMonitor = null;
 
         try {
@@ -58,7 +53,6 @@ public class MonitorWorkerConsumer {
             monitorCheckService.processSuccess(scheduledMonitor, start, response);
 
         } catch (RestClientException e) {
-            log.info(scheduledMonitor.getName());
             log.warn("Ping failed for monitor {}: {}", scheduledMonitor.getName(), e.getMessage());
             monitorCheckService.processFailure(scheduledMonitor, start, response, e.getMessage());
 

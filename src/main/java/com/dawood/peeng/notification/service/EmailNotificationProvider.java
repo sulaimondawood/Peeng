@@ -45,9 +45,7 @@ public class EmailNotificationProvider implements NotificationProvider {
                 .durationSeconds(incident.getDurationSeconds())
                 .build();
 
-        log.info("Send Down Alert for Opened incident ID: {}", monitor.getId());
         notificationProducer.sendIncidentMail(event);
-
 
     }
 
@@ -73,7 +71,7 @@ public class EmailNotificationProvider implements NotificationProvider {
                 .durationSeconds(incident.getDurationSeconds())
                 .build();
 
-        notificationProducer.sendIncidentMail(event);
+        notificationProducer.sendIncidentResolvedMail(event);
 
     }
 }

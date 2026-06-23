@@ -1,17 +1,15 @@
 package com.dawood.peeng.monitor.scheduler;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-
 import com.dawood.peeng.messaging.producers.MonitorWorkerProducer;
 import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.monitor.repository.MonitorRepository;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +26,6 @@ public class SchedulerService {
         .findAllByActiveTrueAndNextCheckAtLessThanEqual(LocalDateTime.now());
 
     dueMonitors.forEach((monitor) -> {
-      log.info("Sent Scheduled Monitor ID: " + monitor.getId().toString() + " to Scheduler Producer Worker");
       monitorWorkerProducer.sendScheduledMonitor(monitor.getId());
     });
 

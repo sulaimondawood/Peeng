@@ -16,8 +16,6 @@ public class NotificationProducer {
 
     public void sendIncidentMail(IncidentEvent event) {
 
-        log.info("Opened incident ID inside Send Incident Mail Notification Producer: {}", event.getIncidentId());
-
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.EXCHANGE,
                 RabbitMQConfig.INCIDENT_OPENED_ROUTING_KEY,

@@ -49,8 +49,6 @@ public class IncidentService {
     }
 
     public Incident resolveIncident(Monitor monitor) {
-
-
         LocalDateTime now = LocalDateTime.now();
 
         Incident incident =
@@ -66,21 +64,15 @@ public class IncidentService {
 
         incident.setResolvedAt(now);
         incident.setStatus(IncidentStatus.RESOLVED);
-
         incident.setDurationSeconds(
                 Duration.between(
                         incident.getStartedAt(),
                         now
                 ).toSeconds()
         );
-
-        incident.setResolvedStatusCode(
-                monitor.getLatestStatusCode()
+        incident.setResolvedStatusCode(monitor.getLatestStatusCode()
         );
-
-        incident.setResolvedResponseTimeMs(
-                monitor.getLatestResponseTimeMs()
-        );
+        incident.setResolvedResponseTimeMs(monitor.getLatestResponseTimeMs());
 
         return incidentRepository.save(incident);
     }

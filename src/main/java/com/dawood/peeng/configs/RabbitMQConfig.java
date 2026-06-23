@@ -29,7 +29,6 @@ public class RabbitMQConfig {
     public static final String INCIDENT_OPENED_ROUTING_KEY = "incident.opened";
     public static final String INCIDENT_CLOSED_ROUTING_KEY = "incident.closed";
 
-    .
 
     @Bean
     public TopicExchange topicExchange() {

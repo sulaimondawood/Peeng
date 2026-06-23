@@ -7,7 +7,6 @@ import com.dawood.peeng.incident.repository.IncidentRepository;
 import com.dawood.peeng.messaging.producers.EmailProducer;
 import com.dawood.peeng.notification.model.NotificationChannelConfig;
 import com.dawood.peeng.notification.respository.NotificationChannelConfigRepository;
-import com.dawood.peeng.tenant.context.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -34,7 +33,6 @@ public class NotificationService {
         List<NotificationChannelConfig> configs = channelConfigRepository.findByTenant_IdAndEnabledTrue(openedIncident.getTenant().getId());
 
         configs.forEach((config) -> {
-            log.info("NOtification Service Open incident ID: {}", openedIncident.getId());
             emailNotificationProvider.sendDownAlert(openedIncident, config);
         });
 
@@ -43,11 +41,18 @@ public class NotificationService {
 
     public void notifyIncidentResolved(UUID incidentId) {
 
-        Incident openedIncident = incidentRepository.findById(incidentId)
+        Incident resolvedIncident = incidentRepository.findById(incidentId)
                 .orElseThrow(() -> new IncidentNotFoundException(
                         "Incident not found",
                         HttpStatus.NOT_FOUND,
                         ErrorCode.NOT_FOUND));
+
+        List<NotificationChannelConfig> configs = channelConfigRepository.findByTenant_IdAndEnabledTrue(resolvedIncident.getTenant().getId());
+
+        configs.forEach((config) -> {
+            emailNotificationProvider.sendRecoveryAlert(resolvedIncident, config);
+        });
+
     }
 
 }
