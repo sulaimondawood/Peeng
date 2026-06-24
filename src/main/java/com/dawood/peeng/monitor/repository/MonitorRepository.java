@@ -12,4 +12,6 @@ public interface MonitorRepository extends JpaRepository<Monitor, UUID> {
 
   List<Monitor> findAllByActiveTrueAndNextCheckAtLessThanEqual(LocalDateTime time);
 
+  Page
+
 }
