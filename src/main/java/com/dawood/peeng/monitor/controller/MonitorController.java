@@ -52,7 +52,7 @@ public class MonitorController {
     meta.setTotalPages(pagedResult.getTotalPages());
     meta.setLast(pagedResult.isLast());
 
-    return ApiResponse.success("Successfully fectched monitors",content,meta);
+    return ApiResponse.success("Successfully fetched monitors",content,meta);
 
   }
 
