@@ -5,9 +5,7 @@ import com.dawood.peeng.identity.exceptions.UserNotFoundException;
 import com.dawood.peeng.identity.models.User;
 import com.dawood.peeng.identity.repository.UserRepository;
 import com.dawood.peeng.monitor.dtos.requests.CreateMonitorRequest;
-import com.dawood.peeng.monitor.dtos.responses.MonitorResponseDTO;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
-import com.dawood.peeng.monitor.mapper.MonitorMapper;
 import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.monitor.repository.MonitorRepository;
 import com.dawood.peeng.tenant.context.TenantContext;
@@ -26,7 +24,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Service
