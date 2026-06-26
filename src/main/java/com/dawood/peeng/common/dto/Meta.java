@@ -1,17 +1,21 @@
 package com.dawood.peeng.common.dto;
 
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 @Getter
 @Builder
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class Meta {
 
-  private Integer page;
+  private Integer pageNumber;
 
-  private Integer size;
+  private Integer pageSize;
 
   private Long totalElements;
 
   private Integer totalPages;
+
+  private boolean last;
 }

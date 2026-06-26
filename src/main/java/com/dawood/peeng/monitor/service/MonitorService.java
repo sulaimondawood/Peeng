@@ -7,6 +7,7 @@ import com.dawood.peeng.identity.repository.UserRepository;
 import com.dawood.peeng.monitor.dtos.requests.CreateMonitorRequest;
 import com.dawood.peeng.monitor.dtos.responses.MonitorResponseDTO;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
+import com.dawood.peeng.monitor.mapper.MonitorMapper;
 import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.monitor.repository.MonitorRepository;
 import com.dawood.peeng.tenant.context.TenantContext;
@@ -16,6 +17,10 @@ import com.dawood.peeng.tenant.repository.TenantRepository;
 import com.dawood.peeng.utils.SlugUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -81,7 +86,15 @@ public class MonitorService {
 
     }
 
-    public List<MonitorResponseDTO> getAllMonitors() {
-        return null;
+    public Page<Monitor> getAllMonitors(MonitorStatus status, String keyword, int pageNo, int pageSize) {
+
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+
+        UUID tenantId = TenantContext.getTenantId();
+
+      return monitorRepository.findAllMonitors(tenantId, status,keyword,pageable);
+
     }
 }
