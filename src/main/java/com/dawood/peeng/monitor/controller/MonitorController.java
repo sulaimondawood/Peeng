@@ -34,7 +34,7 @@ public class MonitorController {
           @RequestParam(value = "pageNo", required = false, defaultValue = "0") int pageNo,
           @RequestParam(value = "pageSize", required = false, defaultValue = "25") int pageSize,
           @RequestParam(value = "status", required = false) MonitorStatus status,
-          @RequestParam(value = "keyword", required = false) String keyword
+          @RequestParam(value = "keyword", required = false, defaultValue = "") String keyword
           ){
 
     Page<Monitor> pagedResult = monitorService.getAllMonitors(status, keyword, pageNo, pageSize);

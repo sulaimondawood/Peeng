@@ -14,10 +14,33 @@ import com.dawood.peeng.common.dto.ApiError;
 import com.dawood.peeng.common.enums.ErrorCode;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+
+
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<ApiError> methodArgumentNotValidExceptionHandler(MethodArgumentTypeMismatchException ex,
+      HttpServletRequest request) {
+
+    String parameterName = ex.getName();
+    Object providedValue = ex.getValue();
+
+    String customMessage = String.format("Invalid value '%s' for parameter '%s'.", providedValue, parameterName);
+
+    ApiError error = ApiError.builder()
+        .code(ErrorCode.BAD_REQUEST.name())
+        .status(HttpStatus.BAD_REQUEST.value())
+        .error(HttpStatus.BAD_REQUEST.name())
+        .message(customMessage)
+        .path(request.getRequestURI())
+        .build();
+
+    return ResponseEntity.badRequest().body(error);
+
+  }
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ApiError> methodArgumentNotValidExceptionHandler(MethodArgumentNotValidException ex,
       HttpServletRequest request) {
