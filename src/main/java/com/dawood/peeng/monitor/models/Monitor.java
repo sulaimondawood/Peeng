@@ -109,6 +109,7 @@ public class Monitor extends MetaData {
   @Column(columnDefinition = "TEXT")
   private String latestErrorMessage;
 
+  @Enumerated(EnumType.STRING)
   private MonitorLifecycleStatus lifecycle = MonitorLifecycleStatus.ACTIVE;
 
   // Timestamps
