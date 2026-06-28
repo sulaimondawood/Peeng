@@ -7,6 +7,9 @@ import com.dawood.peeng.identity.exceptions.UserNotFoundException;
 import com.dawood.peeng.identity.models.User;
 import com.dawood.peeng.identity.repository.UserRepository;
 import com.dawood.peeng.identity.service.IdentityService;
+import com.dawood.peeng.incident.enums.IncidentStatus;
+import com.dawood.peeng.incident.models.Incident;
+import com.dawood.peeng.incident.repository.IncidentRepository;
 import com.dawood.peeng.membership.exceptions.MembershipException;
 import com.dawood.peeng.membership.models.Membership;
 import com.dawood.peeng.membership.repository.MembershipRepository;
@@ -31,6 +34,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -45,6 +49,7 @@ public class MonitorService {
     private final UserRepository userRepository;
     private final IdentityService identityService;
     private final MembershipRepository membershipRepository;
+    private final IncidentRepository incidentRepository;
 
     public void createMonitor(CreateMonitorRequest payload) {
 
@@ -145,6 +150,49 @@ public class MonitorService {
         }
 
        return monitorRepository.save(existingMonitor);
+
+    }
+
+    @Transactional
+    public void deleteMonitor(UUID monitorId){
+        UUID tenantId = TenantContext.getTenantId();
+
+        User currentUser = identityService.getCurrentLoggedInUser();
+
+        Monitor existingMonitor = monitorRepository.findByIdAndTenantId(monitorId, tenantId)
+                .orElseThrow(() -> new MonitorNotFoundException("Monitor not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
+
+        Membership membership = membershipRepository.findByUser_IdAndTenant_Id(currentUser.getId(), tenantId)
+                .orElseThrow(() -> new MembershipException("User membership not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
+
+        if (membership.getRole() != RoleType.OWNER && membership.getRole() != RoleType.ADMIN) {
+            throw new UnauthorizedException(
+                    "You do not have permission to delete monitor states",
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.FORBIDDEN);
+        }
+
+        if(existingMonitor.getLifecycle() == MonitorLifecycleStatus.DELETED){
+            throw new MonitorException("This monitor has already been deleted", HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
+        }
+
+        existingMonitor.setLifecycle(MonitorLifecycleStatus.DELETED);
+        existingMonitor.setDeletedAt(LocalDateTime.now());
+        existingMonitor.setDeletedBy(currentUser);
+        existingMonitor.setIncidentOpen(false);
+
+        monitorRepository.save(existingMonitor);
+
+        incidentRepository.findByMonitor_IdAndStatus(existingMonitor.getId(), IncidentStatus.OPEN)
+                .ifPresent(incident -> {
+                    incident.setStatus(IncidentStatus.RESOLVED);
+                    incident.setResolvedAt(LocalDateTime.now());
+                    incident.setAcknowledged(true);
+                    incident.setAcknowledgedAt(LocalDateTime.now());
+                    incident.setAcknowledgedByUserId(currentUser.getId());
+
+                    incidentRepository.save(incident);
+                });
 
     }
 }

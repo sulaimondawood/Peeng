@@ -1,27 +1,20 @@
 package com.dawood.peeng.monitor.models;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import com.dawood.peeng.common.models.MetaData;
 import com.dawood.peeng.identity.models.User;
+import com.dawood.peeng.incident.models.Incident;
 import com.dawood.peeng.monitor.enums.MonitorHttpType;
 import com.dawood.peeng.monitor.enums.MonitorLifecycleStatus;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
 import com.dawood.peeng.monitor.enums.MonitorType;
 import com.dawood.peeng.tenant.model.Tenant;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -134,10 +127,15 @@ public class Monitor extends MetaData {
   private User resumedBy;
 
   private LocalDateTime deletedAt;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "deleted_by")
+  private User deletedBy;
   // Incident state
   @Builder.Default
   private boolean incidentOpen = false;
 
-
+  @OneToMany(mappedBy = "monitor")
+  List<Incident> incidents = new ArrayList<>();
 
 }
