@@ -110,7 +110,7 @@ public class MonitorService {
 
     }
 
-    public void toggleMonitorState(UUID monitorId) {
+    public Monitor toggleMonitorState(UUID monitorId) {
 
         UUID tenantId = TenantContext.getTenantId();
 
@@ -135,11 +135,16 @@ public class MonitorService {
 
         if (existingMonitor.getLifecycle() == MonitorLifecycleStatus.ACTIVE) {
             existingMonitor.setLifecycle(MonitorLifecycleStatus.PAUSED);
+            existingMonitor.setPausedAt(LocalDateTime.now());
+            existingMonitor.setPausedBy(currentUser);
         } else if (existingMonitor.getLifecycle() == MonitorLifecycleStatus.PAUSED) {
             existingMonitor.setLifecycle(MonitorLifecycleStatus.ACTIVE);
+            existingMonitor.setResumedAt(LocalDateTime.now());
+            existingMonitor.setResumedBy(currentUser);
+            existingMonitor.setNextCheckAt(LocalDateTime.now());
         }
 
-        monitorRepository.save(existingMonitor);
+       return monitorRepository.save(existingMonitor);
 
     }
 }

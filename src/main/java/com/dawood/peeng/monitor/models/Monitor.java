@@ -112,7 +112,7 @@ public class Monitor extends MetaData {
   @Enumerated(EnumType.STRING)
   private MonitorLifecycleStatus lifecycle = MonitorLifecycleStatus.ACTIVE;
 
-  // Timestamps
+  // Timestamps & Audit
   private LocalDateTime lastCheckedAt;
 
   private LocalDateTime lastSuccessfulCheckAt;
@@ -123,10 +123,17 @@ public class Monitor extends MetaData {
 
   private LocalDateTime pausedAt;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "paused_by")
+  private User pausedBy;
+
   private LocalDateTime resumedAt;
 
-  private LocalDateTime deletedAt;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "resumed_by")
+  private User resumedBy;
 
+  private LocalDateTime deletedAt;
   // Incident state
   @Builder.Default
   private boolean incidentOpen = false;
