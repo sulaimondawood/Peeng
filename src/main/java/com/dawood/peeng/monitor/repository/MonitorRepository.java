@@ -2,8 +2,10 @@ package com.dawood.peeng.monitor.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+import com.dawood.peeng.monitor.enums.MonitorLifecycleStatus;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,7 +18,9 @@ import org.springframework.data.repository.query.Param;
 
 public interface MonitorRepository extends JpaRepository<Monitor, UUID> {
 
-  List<Monitor> findAllByActiveTrueAndNextCheckAtLessThanEqual(LocalDateTime time);
+  List<Monitor> findAllByLifecycleAndNextCheckAtLessThanEqual(MonitorLifecycleStatus status, LocalDateTime time);
+
+  Optional<Monitor> findByIdAndTenantId(UUID uuid, UUID tenantId);
 
   @Query("""
     SELECT m FROM Monitor m

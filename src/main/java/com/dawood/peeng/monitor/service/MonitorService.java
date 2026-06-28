@@ -1,11 +1,17 @@
 package com.dawood.peeng.monitor.service;
 
 import com.dawood.peeng.common.enums.ErrorCode;
+import com.dawood.peeng.identity.enums.RoleType;
 import com.dawood.peeng.identity.exceptions.UserNotFoundException;
 import com.dawood.peeng.identity.models.User;
 import com.dawood.peeng.identity.repository.UserRepository;
+import com.dawood.peeng.identity.service.IdentityService;
+import com.dawood.peeng.membership.exceptions.MembershipException;
+import com.dawood.peeng.membership.models.Membership;
+import com.dawood.peeng.membership.repository.MembershipRepository;
 import com.dawood.peeng.monitor.dtos.requests.CreateMonitorRequest;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
+import com.dawood.peeng.monitor.exceptions.MonitorNotFoundException;
 import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.monitor.repository.MonitorRepository;
 import com.dawood.peeng.tenant.context.TenantContext;
@@ -34,6 +40,8 @@ public class MonitorService {
     private final MonitorRepository monitorRepository;
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
+    private final IdentityService identityService;
+    private final MembershipRepository membershipRepository;
 
     public void createMonitor(CreateMonitorRequest payload) {
 
@@ -96,6 +104,26 @@ public class MonitorService {
         UUID tenantId = TenantContext.getTenantId();
 
         return monitorRepository.findAllMonitors(tenantId, status, keyword, pageable);
+
+    }
+
+    public Void pauseMonitor(UUID monitorId){
+
+        UUID tenantId = TenantContext.getTenantId();
+
+        User currentUser = identityService.getCurrentLoggedInUser();
+
+        Monitor existingMonitor = monitorRepository.findByIdAndTenantId(monitorId,tenantId)
+                .orElseThrow(()->new MonitorNotFoundException("Monitor not found", HttpStatus.NOT_FOUND,ErrorCode.NOT_FOUND));
+
+        Membership membership = membershipRepository.findByUser_IdAndTenant_Id(currentUser.getId(),tenantId)
+                .orElseThrow(()->new MembershipException("User membership not found",HttpStatus.NOT_FOUND,ErrorCode.NOT_FOUND));
+
+        if(membership.getRole() == RoleType.VIEWER){
+            throw new
+        }
+
+        return null;
 
     }
 }

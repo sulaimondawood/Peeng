@@ -1,6 +1,7 @@
 package com.dawood.peeng.monitor.scheduler;
 
 import com.dawood.peeng.messaging.producers.MonitorWorkerProducer;
+import com.dawood.peeng.monitor.enums.MonitorLifecycleStatus;
 import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.monitor.repository.MonitorRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ public class SchedulerService {
   public void scheduleChecks() {
 
     List<Monitor> dueMonitors = monitorRepository
-        .findAllByActiveTrueAndNextCheckAtLessThanEqual(LocalDateTime.now());
+        .findAllByLifecycleAndNextCheckAtLessThanEqual(MonitorLifecycleStatus.ACTIVE,LocalDateTime.now());
 
     dueMonitors.forEach((monitor) -> {
       monitorWorkerProducer.sendScheduledMonitor(monitor.getId());

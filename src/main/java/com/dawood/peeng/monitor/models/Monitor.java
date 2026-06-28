@@ -6,6 +6,7 @@ import java.util.UUID;
 import com.dawood.peeng.common.models.MetaData;
 import com.dawood.peeng.identity.models.User;
 import com.dawood.peeng.monitor.enums.MonitorHttpType;
+import com.dawood.peeng.monitor.enums.MonitorLifecycleStatus;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
 import com.dawood.peeng.monitor.enums.MonitorType;
 import com.dawood.peeng.tenant.model.Tenant;
@@ -44,12 +45,10 @@ public class Monitor extends MetaData {
   @JoinColumn(name = "tenant_id", nullable = false)
   private Tenant tenant;
 
-  // Audit
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "created_by_user_id")
   private User createdBy;
 
-  // Basic info
   @Column(nullable = false)
   private String name;
 
@@ -59,7 +58,6 @@ public class Monitor extends MetaData {
   @Column(unique = true)
   private String slug;
 
-  // HTTP monitor configuration
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private MonitorType type;
@@ -80,10 +78,6 @@ public class Monitor extends MetaData {
 
   @Column(nullable = false)
   private Long timeoutInSeconds;
-
-  // Monitor behavior
-  @Builder.Default
-  private boolean active = true;
 
   @Builder.Default
   private Integer retryAttempts = 2;
@@ -115,6 +109,8 @@ public class Monitor extends MetaData {
   @Column(columnDefinition = "TEXT")
   private String latestErrorMessage;
 
+  private MonitorLifecycleStatus lifecycle = MonitorLifecycleStatus.ACTIVE;
+
   // Timestamps
   private LocalDateTime lastCheckedAt;
 
@@ -124,12 +120,16 @@ public class Monitor extends MetaData {
 
   private LocalDateTime lastStatusChangeAt;
 
+  private LocalDateTime pausedAt;
+
+  private LocalDateTime resumedAt;
+
+  private LocalDateTime deletedAt;
+
   // Incident state
   @Builder.Default
   private boolean incidentOpen = false;
 
-  private LocalDateTime deletedAt;
 
-  private boolean deleted;
 
 }

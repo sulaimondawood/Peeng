@@ -6,10 +6,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.dawood.peeng.identity.exceptions.*;
 import com.dawood.peeng.notification.enums.NotificationChannel;
 import com.dawood.peeng.notification.model.NotificationChannelConfig;
 import com.dawood.peeng.notification.respository.NotificationChannelConfigRepository;
+import com.sun.security.auth.UserPrincipal;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,11 +28,6 @@ import com.dawood.peeng.identity.dtos.response.RegisterResponseDTO;
 import com.dawood.peeng.identity.dtos.response.UserSessionDTO;
 import com.dawood.peeng.identity.enums.RoleType;
 import com.dawood.peeng.identity.enums.Status;
-import com.dawood.peeng.identity.exceptions.AccountLockedException;
-import com.dawood.peeng.identity.exceptions.AccountSuspendedException;
-import com.dawood.peeng.identity.exceptions.EmailAlreadyExistsException;
-import com.dawood.peeng.identity.exceptions.EmailNotVerifiedException;
-import com.dawood.peeng.identity.exceptions.InvalidCredentialsException;
 import com.dawood.peeng.identity.models.EmailVerificationToken;
 import com.dawood.peeng.identity.models.User;
 import com.dawood.peeng.identity.repository.EmailVerificationTokenRepository;
@@ -286,6 +285,28 @@ public class IdentityService {
         .name(user.getName()).build());
 
     return response;
+
+  }
+
+  private String getCurrentUserEmail() {
+
+    Authentication authentication =
+            SecurityContextHolder.getContext().getAuthentication();
+
+    if (authentication == null || !authentication.isAuthenticated()) {
+      throw new UnauthorizedException(
+              "User is not authenticated",
+              HttpStatus.UNAUTHORIZED,
+              ErrorCode.UNAUTHORIZED
+      );
+    }
+
+    return authentication.getName();
+  }
+
+  public User getCurrentLoggedInUser(){
+    return userRepository.findByEmailIgnoreCase(getCurrentUserEmail())
+            .orElseThrow(()->new UserNotFoundException("User not found",HttpStatus.NOT_FOUND,ErrorCode.USER_NOT_FOUND));
 
   }
 }
