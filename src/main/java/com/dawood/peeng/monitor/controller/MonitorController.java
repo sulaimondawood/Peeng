@@ -71,4 +71,12 @@ public class MonitorController {
 
     }
 
+    @DeleteMapping("/{monitorId}")
+    public ApiResponse<Void> deleteMonitor(@PathVariable("monitorId") UUID monitorId) {
+
+        monitorService.deleteMonitor(monitorId);
+        return ApiResponse.success("Monitor deleted successfully", null);
+
+    }
+
 }
