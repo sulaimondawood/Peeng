@@ -15,14 +15,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MonitorWorkerProducer {
 
-  private final RabbitTemplate rabbitTemplate;
+    private final RabbitTemplate rabbitTemplate;
 
-  public void sendScheduledMonitor(UUID monitorId) {
-    rabbitTemplate.convertAndSend(
-        RabbitMQConfig.EXCHANGE,
-        RabbitMQConfig.SCHEDULER_ROUTING_KEY,
-        monitorId);
+    public void sendScheduledMonitor(UUID monitorId) {
+        rabbitTemplate.convertAndSend(
+                RabbitMQConfig.EXCHANGE,
+                RabbitMQConfig.SCHEDULER_ROUTING_KEY,
+                monitorId);
 
-  }
+    }
 
 }

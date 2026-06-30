@@ -44,7 +44,7 @@ public class MonitorCheckService {
 
         monitor.setNextCheckAt(
                 now.plusSeconds(monitor.getIntervalInSeconds())
-              );
+        );
         monitor.setConsecutiveFailures(0);
         monitor.setConsecutiveSuccesses(
                 monitor.getConsecutiveSuccesses() + 1);
@@ -62,15 +62,11 @@ public class MonitorCheckService {
 
             }
         });
-
-
     }
 
     @Transactional
     public void processFailure(Monitor monitor, long startTime, ResponseEntity<Void> response,
                                String message) {
-
-
         long responseTime = System.currentTimeMillis() - startTime;
         LocalDateTime now = LocalDateTime.now();
 

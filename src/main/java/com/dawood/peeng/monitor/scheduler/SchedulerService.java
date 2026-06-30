@@ -17,19 +17,19 @@ import java.util.List;
 @Slf4j
 public class SchedulerService {
 
-  private final MonitorRepository monitorRepository;
-  private final MonitorWorkerProducer monitorWorkerProducer;
+    private final MonitorRepository monitorRepository;
+    private final MonitorWorkerProducer monitorWorkerProducer;
 
-  @Scheduled(fixedDelay = 1000)
-  public void scheduleChecks() {
+    @Scheduled(fixedDelay = 1000)
+    public void scheduleChecks() {
 
-    List<Monitor> dueMonitors = monitorRepository
-        .findAllByLifecycleAndNextCheckAtLessThanEqual(MonitorLifecycleStatus.ACTIVE,LocalDateTime.now());
+        List<Monitor> dueMonitors = monitorRepository
+                .findAllByLifecycleAndNextCheckAtLessThanEqual(MonitorLifecycleStatus.ACTIVE, LocalDateTime.now());
 
-    dueMonitors.forEach((monitor) -> {
-      monitorWorkerProducer.sendScheduledMonitor(monitor.getId());
-    });
+        dueMonitors.forEach((monitor) -> {
+            monitorWorkerProducer.sendScheduledMonitor(monitor.getId());
+        });
 
-  }
+    }
 
 }

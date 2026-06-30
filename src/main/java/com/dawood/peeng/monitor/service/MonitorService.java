@@ -8,16 +8,18 @@ import com.dawood.peeng.identity.models.User;
 import com.dawood.peeng.identity.repository.UserRepository;
 import com.dawood.peeng.identity.service.IdentityService;
 import com.dawood.peeng.incident.enums.IncidentStatus;
-import com.dawood.peeng.incident.models.Incident;
 import com.dawood.peeng.incident.repository.IncidentRepository;
 import com.dawood.peeng.membership.exceptions.MembershipException;
 import com.dawood.peeng.membership.models.Membership;
 import com.dawood.peeng.membership.repository.MembershipRepository;
 import com.dawood.peeng.monitor.dtos.requests.CreateMonitorRequest;
+import com.dawood.peeng.monitor.dtos.responses.MonitorResponseDTO;
+import com.dawood.peeng.monitor.dtos.responses.MonitorStatsProjection;
 import com.dawood.peeng.monitor.enums.MonitorLifecycleStatus;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
 import com.dawood.peeng.monitor.exceptions.MonitorException;
 import com.dawood.peeng.monitor.exceptions.MonitorNotFoundException;
+import com.dawood.peeng.monitor.mapper.MonitorMapper;
 import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.monitor.repository.MonitorRepository;
 import com.dawood.peeng.tenant.context.TenantContext;
@@ -194,5 +196,19 @@ public class MonitorService {
                     incidentRepository.save(incident);
                 });
 
+    }
+
+    public MonitorResponseDTO getMonitorDetails(UUID monitorId){
+        UUID tenantId = TenantContext.getTenantId();
+
+        Monitor existingMonitor = monitorRepository.findByIdAndTenantId(monitorId, tenantId)
+                .orElseThrow(() -> new MonitorNotFoundException("Monitor not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
+
+        return MonitorMapper.toDTO(existingMonitor);
+    }
+
+    public MonitorStatsProjection getMonitorStatistics(UUID monitorId){
+
+        return null;
     }
 }

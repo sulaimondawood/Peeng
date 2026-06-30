@@ -79,4 +79,11 @@ public class MonitorController {
 
     }
 
+    @GetMapping("/{monitorId}")
+    public ApiResponse<MonitorResponseDTO> getMonitorDetails(@PathVariable("monitorId") UUID monitorId) {
+        return ApiResponse.success("Monitor successfully fetched", monitorService.getMonitorDetails(monitorId));
+
+    }
+
+
 }
