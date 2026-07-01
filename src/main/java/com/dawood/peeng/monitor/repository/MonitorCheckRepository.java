@@ -27,4 +27,6 @@ public interface MonitorCheckRepository extends JpaRepository<MonitorCheck, UUID
         AND mc.monitor.id = :monitorId
     """)
 Optional<MonitorStatsProjection> getStatistics(@Param("tenantId") UUID tenantId, @Param("monitorId") UUID monitorId);
+
+
 }

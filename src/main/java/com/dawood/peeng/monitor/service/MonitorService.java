@@ -15,6 +15,7 @@ import com.dawood.peeng.membership.repository.MembershipRepository;
 import com.dawood.peeng.monitor.dtos.requests.CreateMonitorRequest;
 import com.dawood.peeng.monitor.dtos.responses.MonitorResponseDTO;
 import com.dawood.peeng.monitor.dtos.responses.MonitorStatsProjection;
+import com.dawood.peeng.monitor.dtos.responses.ResponseTimeResponse;
 import com.dawood.peeng.monitor.enums.MonitorLifecycleStatus;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
 import com.dawood.peeng.monitor.exceptions.MonitorException;
@@ -217,5 +218,16 @@ public class MonitorService {
                 .orElseThrow(() -> new MonitorNotFoundException("Monitor not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
 
         return monitorCheckRepository.getStatistics(tenantId, monitorId).orElseGet(() -> new MonitorStatsProjection(100.0, 0.0, 0.0, 0.0, 0, 0, 0, 0));
+    }
+
+    public ResponseTimeResponse getResponseTimes(UUID monitorId){
+
+        UUID tenantId = TenantContext.getTenantId();
+
+        monitorRepository.findByIdAndTenantId(monitorId, tenantId)
+                .orElseThrow(() -> new MonitorNotFoundException("Monitor not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
+
+
+
     }
 }
