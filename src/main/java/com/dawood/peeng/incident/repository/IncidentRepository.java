@@ -20,5 +20,5 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
                 WHERE i.tenant.id=:tenantId
                 AND i.monitor.id=:monitorId
             """)
-    long incidentCount(@Param("tenantId") UUID tenantId, @Param("monitorId") UUID monitorId);;
+    long incidentCount(@Param("tenantId") UUID tenantId, @Param("monitorId") UUID monitorId);
 }

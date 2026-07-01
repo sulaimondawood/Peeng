@@ -21,6 +21,7 @@ import com.dawood.peeng.monitor.exceptions.MonitorException;
 import com.dawood.peeng.monitor.exceptions.MonitorNotFoundException;
 import com.dawood.peeng.monitor.mapper.MonitorMapper;
 import com.dawood.peeng.monitor.models.Monitor;
+import com.dawood.peeng.monitor.repository.MonitorCheckRepository;
 import com.dawood.peeng.monitor.repository.MonitorRepository;
 import com.dawood.peeng.tenant.context.TenantContext;
 import com.dawood.peeng.tenant.exceptions.TenantException;
@@ -39,6 +40,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -52,6 +54,7 @@ public class MonitorService {
     private final IdentityService identityService;
     private final MembershipRepository membershipRepository;
     private final IncidentRepository incidentRepository;
+    private final MonitorCheckRepository monitorCheckRepository;
 
     public void createMonitor(CreateMonitorRequest payload) {
 
@@ -151,12 +154,12 @@ public class MonitorService {
             existingMonitor.setNextCheckAt(LocalDateTime.now());
         }
 
-       return monitorRepository.save(existingMonitor);
+        return monitorRepository.save(existingMonitor);
 
     }
 
     @Transactional
-    public void deleteMonitor(UUID monitorId){
+    public void deleteMonitor(UUID monitorId) {
         UUID tenantId = TenantContext.getTenantId();
 
         User currentUser = identityService.getCurrentLoggedInUser();
@@ -174,7 +177,7 @@ public class MonitorService {
                     ErrorCode.FORBIDDEN);
         }
 
-        if(existingMonitor.getLifecycle() == MonitorLifecycleStatus.DELETED){
+        if (existingMonitor.getLifecycle() == MonitorLifecycleStatus.DELETED) {
             throw new MonitorException("This monitor has already been deleted", HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
         }
 
@@ -198,7 +201,7 @@ public class MonitorService {
 
     }
 
-    public MonitorResponseDTO getMonitorDetails(UUID monitorId){
+    public MonitorResponseDTO getMonitorDetails(UUID monitorId) {
         UUID tenantId = TenantContext.getTenantId();
 
         Monitor existingMonitor = monitorRepository.findByIdAndTenantId(monitorId, tenantId)
@@ -207,8 +210,12 @@ public class MonitorService {
         return MonitorMapper.toDTO(existingMonitor);
     }
 
-    public MonitorStatsProjection getMonitorStatistics(UUID monitorId){
+    public MonitorStatsProjection getMonitorStatistics(UUID monitorId) {
+        UUID tenantId = TenantContext.getTenantId();
 
-        return null;
+        monitorRepository.findByIdAndTenantId(monitorId, tenantId)
+                .orElseThrow(() -> new MonitorNotFoundException("Monitor not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
+
+        return monitorCheckRepository.getStatistics(tenantId, monitorId).orElseGet(() -> new MonitorStatsProjection(100.0, 0.0, 0.0, 0.0, 0, 0, 0, 0));
     }
 }
