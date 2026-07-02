@@ -8,11 +8,9 @@ import java.util.List;
 @Getter
 @Setter
 public class ResponseTimeResponse {
-    private List<ResponseTimePoint> responseTimes;
+//    private List<ResponseTimePoint> responseTimes;
 
-    private Long minResponseTime;
 
-    private Long maxResponseTime;
 
     private Double averageResponseTime;
 
