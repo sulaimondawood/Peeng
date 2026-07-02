@@ -4,6 +4,7 @@ import com.dawood.peeng.common.dto.ApiResponse;
 import com.dawood.peeng.common.dto.Meta;
 import com.dawood.peeng.monitor.dtos.requests.CreateMonitorRequest;
 import com.dawood.peeng.monitor.dtos.responses.MonitorResponseDTO;
+import com.dawood.peeng.monitor.dtos.responses.ResponseTimePointProjection;
 import com.dawood.peeng.monitor.enums.MonitorLifecycleStatus;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
 import com.dawood.peeng.monitor.mapper.MonitorMapper;
@@ -82,6 +83,14 @@ public class MonitorController {
     @GetMapping("/{monitorId}")
     public ApiResponse<MonitorResponseDTO> getMonitorDetails(@PathVariable("monitorId") UUID monitorId) {
         return ApiResponse.success("Monitor successfully fetched", monitorService.getMonitorDetails(monitorId));
+
+    }
+
+    @GetMapping("/{monitorId}/response-times")
+    public ApiResponse<List<ResponseTimePointProjection>> getMonitorResponseTimes(
+            @PathVariable("monitorId") UUID monitorId,
+            @RequestParam(name = "range", required = false) String range) {
+        return ApiResponse.success("Monitor successfully fetched", monitorService.getResponseTimes(monitorId,range));
 
     }
 

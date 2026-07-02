@@ -33,7 +33,7 @@ public interface MonitorCheckRepository extends JpaRepository<MonitorCheck, UUID
 
     @Query(value = """
                 SELECT 
-                   DATE_TRUNC('hour', checked_at) AS timestamp,
+                   DATE_BIN('1 minute', checked_at, '1970-01-01 00:00:00') AS timestamp,
                    AVG(response_time_ms) AS responseTimeMs,
                    MIN(response_time_ms) AS minResponseTime,
                    MAX(response_time_ms) AS maxResponseTime,
@@ -45,7 +45,67 @@ public interface MonitorCheckRepository extends JpaRepository<MonitorCheck, UUID
                 GROUP BY timestamp
                 ORDER BY timestamp ASC
             """, nativeQuery = true)
-    List<ResponseTimePointProjection> getHourlyResponseTimes(
+    List<ResponseTimePointProjection> findHourlyBucket(
+            @Param("tenantId") UUID tenantId,
+            @Param("monitorId") UUID monitorId,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to);
+
+    @Query(value = """
+                SELECT 
+                   DATE_BIN('30 minutes', checked_at, '1970-01-01 00:00:00') AS timestamp,
+                   AVG(response_time_ms) AS responseTimeMs,
+                   MIN(response_time_ms) AS minResponseTime,
+                   MAX(response_time_ms) AS maxResponseTime,
+                   SUM(CASE WHEN successful THEN 1 ELSE 0 END) AS successfulCount  
+                FROM monitor_checks
+                WHERE tenant_id = :tenantId
+                AND monitor_id = :monitorId
+                AND checked_at BETWEEN :from AND :to
+                GROUP BY timestamp
+                ORDER BY timestamp ASC
+            """, nativeQuery = true)
+    List<ResponseTimePointProjection> find24hrBucket(
+            @Param("tenantId") UUID tenantId,
+            @Param("monitorId") UUID monitorId,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to);
+
+    @Query(value = """
+                SELECT 
+                   DATE_BIN('2 hours', checked_at, '1970-01-01 00:00:00') AS timestamp,
+                   AVG(response_time_ms) AS responseTimeMs,
+                   MIN(response_time_ms) AS minResponseTime,
+                   MAX(response_time_ms) AS maxResponseTime,
+                   SUM(CASE WHEN successful THEN 1 ELSE 0 END) AS successfulCount  
+                FROM monitor_checks
+                WHERE tenant_id = :tenantId
+                AND monitor_id = :monitorId
+                AND checked_at BETWEEN :from AND :to
+                GROUP BY timestamp
+                ORDER BY timestamp ASC
+            """, nativeQuery = true)
+    List<ResponseTimePointProjection> find7daysBucket(
+            @Param("tenantId") UUID tenantId,
+            @Param("monitorId") UUID monitorId,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to);
+
+    @Query(value = """
+                SELECT 
+                   DATE_BIN('6 hours', checked_at, '1970-01-01 00:00:00') AS timestamp,
+                   AVG(response_time_ms) AS responseTimeMs,
+                   MIN(response_time_ms) AS minResponseTime,
+                   MAX(response_time_ms) AS maxResponseTime,
+                   SUM(CASE WHEN successful THEN 1 ELSE 0 END) AS successfulCount  
+                FROM monitor_checks
+                WHERE tenant_id = :tenantId
+                AND monitor_id = :monitorId
+                AND checked_at BETWEEN :from AND :to
+                GROUP BY timestamp
+                ORDER BY timestamp ASC
+            """, nativeQuery = true)
+    List<ResponseTimePointProjection> findMonthlyBucket(
             @Param("tenantId") UUID tenantId,
             @Param("monitorId") UUID monitorId,
             @Param("from") LocalDateTime from,

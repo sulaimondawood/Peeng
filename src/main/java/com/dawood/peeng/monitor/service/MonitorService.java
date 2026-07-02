@@ -18,6 +18,7 @@ import com.dawood.peeng.monitor.dtos.responses.MonitorStatsProjection;
 import com.dawood.peeng.monitor.dtos.responses.ResponseTimePointProjection;
 import com.dawood.peeng.monitor.enums.MonitorLifecycleStatus;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
+import com.dawood.peeng.monitor.enums.TimeRange;
 import com.dawood.peeng.monitor.exceptions.MonitorException;
 import com.dawood.peeng.monitor.exceptions.MonitorNotFoundException;
 import com.dawood.peeng.monitor.mapper.MonitorMapper;
@@ -41,6 +42,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -219,14 +221,20 @@ public class MonitorService {
         return monitorCheckRepository.getStatistics(tenantId, monitorId).orElseGet(() -> new MonitorStatsProjection(100.0, 0.0, 0.0, 0.0, 0, 0, 0, 0));
     }
 
-    public ResponseTimePointProjection getResponseTimes(UUID monitorId) {
+    public List<ResponseTimePointProjection> getResponseTimes(UUID monitorId, String rangeStr) {
 
         UUID tenantId = TenantContext.getTenantId();
 
         monitorRepository.findByIdAndTenantId(monitorId, tenantId)
                 .orElseThrow(() -> new MonitorNotFoundException("Monitor not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
 
-        return null;
+        TimeRange range = TimeRange.fromString(rangeStr);
+
+        LocalDateTime to = LocalDateTime.now();
+        LocalDateTime from = range.getFromTimestamp(to);
+
+        return range.executeQuery(monitorCheckRepository,tenantId,monitorId,from,to);
+
 
     }
 }
