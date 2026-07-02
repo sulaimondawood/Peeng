@@ -111,4 +111,19 @@ public interface MonitorCheckRepository extends JpaRepository<MonitorCheck, UUID
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to);
 
+
+    @Query(value = """
+    SELECT DATE_BIN(:timeframe,checked_at,'1970-01-01 00:00:00') AS timestamp
+    ROUND(AVG(response_time_ms)::numeric, 2) AS responseTimeMs,
+    MIN(response_time_ms) AS minResponseTime,
+    MAX(response_time_ms) AS maxResponseTime,
+    FROM monitor_checks
+    WHERE tenant_id = :tenantId
+    AND monitor_id = :monitorId
+    AND checked_at BETWEEN :from AND :to
+    GROUP BY timestamp
+    ORDER BY timestamp ASC
+""", nativeQuery = true)
+    List<ResponseTimePointProjection> findUptimeBlocks(@Param("timeframe") String timeframe);
+
 }
