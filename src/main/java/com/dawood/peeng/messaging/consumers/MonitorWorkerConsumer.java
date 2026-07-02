@@ -2,6 +2,7 @@ package com.dawood.peeng.messaging.consumers;
 
 import com.dawood.peeng.common.enums.ErrorCode;
 import com.dawood.peeng.configs.RabbitMQConfig;
+import com.dawood.peeng.monitor.events.MonitorTaskMessage;
 import com.dawood.peeng.monitor.exceptions.MonitorNotFoundException;
 import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.monitor.repository.MonitorRepository;
@@ -27,8 +28,11 @@ public class MonitorWorkerConsumer {
     private final MonitorCheckService monitorCheckService;
 
     @RabbitListener(queues = RabbitMQConfig.SCHEDULER_ROUTING_QUEUE)
-    public void consumeScheduledMonitor(UUID monitorId) {
+    public void consumeScheduledMonitor(MonitorTaskMessage message) {
         Monitor scheduledMonitor = null;
+
+        UUID monitorId = message.getMonitorId();
+        UUID tenantId = message.getTenantId();
 
         try {
             scheduledMonitor = monitorRepository.findById(monitorId)
@@ -50,11 +54,11 @@ public class MonitorWorkerConsumer {
                     .uri(scheduledMonitor.getUrl())
                     .retrieve()
                     .toBodilessEntity();
-            monitorCheckService.processSuccess(scheduledMonitor, start, response);
+            monitorCheckService.processSuccess(scheduledMonitor, tenantId, start, response);
 
         } catch (RestClientException e) {
             log.warn("Ping failed for monitor {}: {}", scheduledMonitor.getName(), e.getMessage());
-            monitorCheckService.processFailure(scheduledMonitor, start, response, e.getMessage());
+            monitorCheckService.processFailure(scheduledMonitor, tenantId, start, response, e.getMessage());
 
         } catch (Exception e) {
             log.error("Unexpected runtime error processing monitor ID: {}", monitorId, e);

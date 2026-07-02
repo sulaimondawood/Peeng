@@ -218,7 +218,15 @@ public class MonitorService {
         monitorRepository.findByIdAndTenantId(monitorId, tenantId)
                 .orElseThrow(() -> new MonitorNotFoundException("Monitor not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
 
-        return monitorCheckRepository.getStatistics(tenantId, monitorId).orElseGet(() -> new MonitorStatsProjection(100.0, 0.0, 0.0, 0.0, 0, 0, 0, 0));
+        return monitorCheckRepository.getStatistics(tenantId, monitorId).orElseGet(() -> new MonitorStatsProjection(
+                100.0,
+                0.0,
+                0.0,
+                0.0,
+                0,
+                0,
+                0,
+                0));
     }
 
     public List<ResponseTimePointProjection> getResponseTimes(UUID monitorId, String rangeStr) {

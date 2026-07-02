@@ -2,6 +2,7 @@ package com.dawood.peeng.messaging.producers;
 
 import java.util.UUID;
 
+import com.dawood.peeng.monitor.events.MonitorTaskMessage;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
@@ -17,11 +18,11 @@ public class MonitorWorkerProducer {
 
     private final RabbitTemplate rabbitTemplate;
 
-    public void sendScheduledMonitor(UUID monitorId) {
+    public void sendScheduledMonitor(MonitorTaskMessage message) {
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.EXCHANGE,
                 RabbitMQConfig.SCHEDULER_ROUTING_KEY,
-                monitorId);
+                message);
 
     }
 
