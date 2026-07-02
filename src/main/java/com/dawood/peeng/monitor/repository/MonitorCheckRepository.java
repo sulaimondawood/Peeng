@@ -17,7 +17,7 @@ public interface MonitorCheckRepository extends JpaRepository<MonitorCheck, UUID
     @Query("""
                 SELECT new com.dawood.peeng.monitor.dtos.responses.MonitorStatsProjection(
                     0.0, /* Temporary uptime placeholder */
-                    COALESCE(AVG(mc.responseTimeMs), 0.0),
+                    COALESCE(ROUND(AVG(mc.responseTimeMs), 2), 0.0),
                     COALESCE(MAX(mc.responseTimeMs), 0.0),
                     COALESCE(MIN(mc.responseTimeMs), 0.0),
                     CAST(COUNT(mc) AS int),
