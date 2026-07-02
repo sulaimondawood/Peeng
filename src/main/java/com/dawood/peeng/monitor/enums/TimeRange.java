@@ -1,6 +1,8 @@
 package com.dawood.peeng.monitor.enums;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Stream;
 
 public enum TimeRange {
     ONE_HOUR("1h") {
@@ -44,5 +46,22 @@ public enum TimeRange {
         return timeRange;
     }
 
+    private static final List<TimeRange> VALUES = List.of(values());
+
+    public static TimeRange fromString(String value){
+        if(value == null){
+            throw new IllegalArgumentException("Time range cannot be null");
+        }
+
+        String cleanedValue = value.trim().toLowerCase();
+
+       return VALUES.stream()
+                .filter(range->range.timeRange.equals(cleanedValue))
+                .findFirst()
+                .orElseThrow(()->new IllegalArgumentException("Unsupported range: " + value));
+    }
+
     public abstract LocalDateTime getFromTimestamp(LocalDateTime to);
+
+
 }
