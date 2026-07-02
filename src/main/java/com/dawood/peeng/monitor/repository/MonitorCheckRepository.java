@@ -34,7 +34,7 @@ public interface MonitorCheckRepository extends JpaRepository<MonitorCheck, UUID
     @Query(value = """
                 SELECT 
                    DATE_BIN('1 minute', checked_at, '1970-01-01 00:00:00') AS timestamp,
-                   AVG(response_time_ms) AS responseTimeMs,
+                   ROUND(AVG(response_time_ms)::numeric, 2) AS responseTimeMs,
                    MIN(response_time_ms) AS minResponseTime,
                    MAX(response_time_ms) AS maxResponseTime,
                    SUM(CASE WHEN successful THEN 1 ELSE 0 END) AS successfulCount  
@@ -54,7 +54,7 @@ public interface MonitorCheckRepository extends JpaRepository<MonitorCheck, UUID
     @Query(value = """
                 SELECT 
                    DATE_BIN('30 minutes', checked_at, '1970-01-01 00:00:00') AS timestamp,
-                   AVG(response_time_ms) AS responseTimeMs,
+                   ROUND(AVG(response_time_ms)::numeric, 2) AS responseTimeMs,
                    MIN(response_time_ms) AS minResponseTime,
                    MAX(response_time_ms) AS maxResponseTime,
                    SUM(CASE WHEN successful THEN 1 ELSE 0 END) AS successfulCount  
@@ -74,7 +74,7 @@ public interface MonitorCheckRepository extends JpaRepository<MonitorCheck, UUID
     @Query(value = """
                 SELECT 
                    DATE_BIN('2 hours', checked_at, '1970-01-01 00:00:00') AS timestamp,
-                   AVG(response_time_ms) AS responseTimeMs,
+                   ROUND(AVG(response_time_ms)::numeric, 2) AS responseTimeMs,
                    MIN(response_time_ms) AS minResponseTime,
                    MAX(response_time_ms) AS maxResponseTime,
                    SUM(CASE WHEN successful THEN 1 ELSE 0 END) AS successfulCount  
@@ -94,7 +94,7 @@ public interface MonitorCheckRepository extends JpaRepository<MonitorCheck, UUID
     @Query(value = """
                 SELECT 
                    DATE_BIN('6 hours', checked_at, '1970-01-01 00:00:00') AS timestamp,
-                   AVG(response_time_ms) AS responseTimeMs,
+                   ROUND(AVG(response_time_ms)::numeric, 2) AS responseTimeMs,
                    MIN(response_time_ms) AS minResponseTime,
                    MAX(response_time_ms) AS maxResponseTime,
                    SUM(CASE WHEN successful THEN 1 ELSE 0 END) AS successfulCount  

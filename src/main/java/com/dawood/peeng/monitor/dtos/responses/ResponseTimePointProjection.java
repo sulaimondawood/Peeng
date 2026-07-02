@@ -5,14 +5,14 @@ import java.time.LocalDateTime;
 
 public interface ResponseTimePointProjection {
 
-    LocalDateTime timestamp();
+    LocalDateTime getTimestamp();
 
-    Long responseTimeMs();
+    Double getResponseTimeMs(); // Changed to Double because AVG() returns decimals
 
-    Long minResponseTime();
+    Long getMinResponseTime();
 
-    Long maxResponseTime();
+    Long getMaxResponseTime();
 
-    long successfulCount();
+    Long getSuccessfulCount();
 
 }
