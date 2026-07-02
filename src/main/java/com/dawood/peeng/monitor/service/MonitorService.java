@@ -15,7 +15,7 @@ import com.dawood.peeng.membership.repository.MembershipRepository;
 import com.dawood.peeng.monitor.dtos.requests.CreateMonitorRequest;
 import com.dawood.peeng.monitor.dtos.responses.MonitorResponseDTO;
 import com.dawood.peeng.monitor.dtos.responses.MonitorStatsProjection;
-import com.dawood.peeng.monitor.dtos.responses.ResponseTimeResponse;
+import com.dawood.peeng.monitor.dtos.responses.ResponseTimePointProjection;
 import com.dawood.peeng.monitor.enums.MonitorLifecycleStatus;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
 import com.dawood.peeng.monitor.exceptions.MonitorException;
@@ -41,7 +41,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -220,7 +219,7 @@ public class MonitorService {
         return monitorCheckRepository.getStatistics(tenantId, monitorId).orElseGet(() -> new MonitorStatsProjection(100.0, 0.0, 0.0, 0.0, 0, 0, 0, 0));
     }
 
-    public ResponseTimeResponse getResponseTimes(UUID monitorId) {
+    public ResponseTimePointProjection getResponseTimes(UUID monitorId) {
 
         UUID tenantId = TenantContext.getTenantId();
 

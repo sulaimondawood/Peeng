@@ -5,14 +5,14 @@ import java.time.LocalDateTime;
 
 public interface ResponseTimePointProjection {
 
-     LocalDateTime timestamp();
+    LocalDateTime timestamp();
 
-     Long responseTimeMs();
+    Long responseTimeMs();
 
     Long minResponseTime();
 
     Long maxResponseTime();
 
-     long successfulCount();
+    long successfulCount();
 
 }

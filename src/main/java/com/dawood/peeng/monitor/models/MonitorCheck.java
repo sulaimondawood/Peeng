@@ -1,17 +1,12 @@
 package com.dawood.peeng.monitor.models;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
 import com.dawood.peeng.common.models.MetaData;
-
 import com.dawood.peeng.tenant.model.Tenant;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "monitor_checks",indexes = {

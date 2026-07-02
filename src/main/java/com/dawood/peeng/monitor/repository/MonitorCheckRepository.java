@@ -7,7 +7,6 @@ import java.util.UUID;
 
 import com.dawood.peeng.monitor.dtos.responses.MonitorStatsProjection;
 import com.dawood.peeng.monitor.dtos.responses.ResponseTimePointProjection;
-import com.dawood.peeng.monitor.dtos.responses.ResponseTimeResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.dawood.peeng.monitor.models.MonitorCheck;
