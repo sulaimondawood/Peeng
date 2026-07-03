@@ -2,6 +2,7 @@ package com.dawood.peeng.incident.service;
 
 import com.dawood.peeng.common.enums.ErrorCode;
 import com.dawood.peeng.incident.dto.response.IncidentDTO;
+import com.dawood.peeng.incident.enums.DateRangeBucket;
 import com.dawood.peeng.incident.enums.IncidentStatus;
 import com.dawood.peeng.incident.exceptions.IncidentNotFoundException;
 import com.dawood.peeng.incident.mapper.IncidentMapper;
@@ -11,6 +12,9 @@ import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.monitor.service.MonitorService;
 import com.dawood.peeng.tenant.context.TenantContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -102,6 +106,28 @@ public class IncidentService {
                 .stream()
                 .map(IncidentMapper::toDTO)
                 .toList();
+
+
+    }
+
+    public Page<Incident> getAllIncidents(
+            String statusStr,
+            UUID monitorId,
+            String dateBucket,
+            int page,
+            int size){
+
+        UUID tenantId = TenantContext.getTenantId();
+        Pageable pageable = PageRequest.of(page,size);
+
+        IncidentStatus status = IncidentStatus.fromString(statusStr);
+
+        DateRangeBucket rangeBucket = DateRangeBucket.fromString(dateBucket);
+        LocalDateTime to = LocalDateTime.now();
+        LocalDateTime from = rangeBucket.getFromLocalDateTime(to);
+
+
+        return incidentRepository.findAllIncidents(tenantId,status,monitorId, from, to, pageable);
 
 
     }
