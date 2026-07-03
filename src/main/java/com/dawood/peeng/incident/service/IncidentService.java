@@ -85,14 +85,25 @@ public class IncidentService {
         return incidentRepository.save(incident);
     }
 
-    public List<IncidentDTO> recentIncident(UUID monitorId){
+    public List<IncidentDTO> recentIncident(UUID monitorId) {
         final UUID tenantId = TenantContext.getTenantId();
-        monitorService.validateMonitorAccess(monitorId,tenantId);
+        monitorService.validateMonitorAccess(monitorId, tenantId);
 
-        return incidentRepository.findTop10ByMonitorIdAndTenantIdOrderByStartedAtDesc(monitorId,tenantId)
+        return incidentRepository.findTop10ByMonitorIdAndTenantIdOrderByStartedAtDesc(monitorId, tenantId)
                 .stream()
                 .map(IncidentMapper::toDTO)
                 .toList();
+    }
+
+    public List<IncidentDTO> getActiveIncidents() {
+        final UUID tenantId = TenantContext.getTenantId();
+
+        return incidentRepository.findByTenantIdAndStatus(tenantId, IncidentStatus.OPEN)
+                .stream()
+                .map(IncidentMapper::toDTO)
+                .toList();
+
+
     }
 
 }

@@ -1,6 +1,7 @@
 package com.dawood.peeng.incident.dto.response;
 
 import com.dawood.peeng.incident.enums.IncidentStatus;
+import com.dawood.peeng.monitor.dtos.responses.MonitorResponseDTO;
 import lombok.*;
 
 import java.util.UUID;
@@ -22,5 +23,7 @@ public class IncidentDTO {
     private Integer resolvedStatusCode;
 
     private Long durationSeconds;
+
+    private MonitorResponseDTO monitor;
 
 }

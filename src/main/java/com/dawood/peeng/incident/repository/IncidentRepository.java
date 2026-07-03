@@ -24,4 +24,8 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
     long incidentCount(@Param("tenantId") UUID tenantId, @Param("monitorId") UUID monitorId);
 
     List<Incident> findTop10ByMonitorIdAndTenantIdOrderByStartedAtDesc(UUID monitorId, UUID tenantId);
+
+    Optional<Incident> findByTenantIdAndIdAndStatus(UUID tenantId, UUID incidentId, IncidentStatus status);
+
+    List<Incident> findByTenantIdAndStatus(UUID tenantId, IncidentStatus status);
 }
