@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import com.dawood.peeng.monitor.dtos.responses.MonitorStatsProjection;
 import com.dawood.peeng.monitor.dtos.responses.ResponseTimePointProjection;
+import com.dawood.peeng.monitor.dtos.responses.UptimeBlockProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.dawood.peeng.monitor.models.MonitorCheck;
@@ -113,17 +114,32 @@ public interface MonitorCheckRepository extends JpaRepository<MonitorCheck, UUID
 
 
     @Query(value = """
-    SELECT DATE_BIN(:timeframe,checked_at,'1970-01-01 00:00:00') AS timestamp
-    ROUND(AVG(response_time_ms)::numeric, 2) AS responseTimeMs,
-    MIN(response_time_ms) AS minResponseTime,
-    MAX(response_time_ms) AS maxResponseTime,
-    FROM monitor_checks
-    WHERE tenant_id = :tenantId
-    AND monitor_id = :monitorId
-    AND checked_at BETWEEN :from AND :to
-    GROUP BY timestamp
-    ORDER BY timestamp ASC
-""", nativeQuery = true)
-    List<ResponseTimePointProjection> findUptimeBlocks(@Param("timeframe") String timeframe);
+                SELECT
+                    sub.timestamp,
+                    sub.responseTimeMs,
+                    sub.successfulCount,
+                    sub.containedCount,
+                    ROUND((sub.successfulCount::numeric / sub.containedCount::numeric) *100,2) AS uptimePercentage
+                FROM(
+                    SELECT 
+                        DATE_BIN(:timeframe::interval,checked_at,'1970-01-01 00:00:00') AS timestamp,
+                        ROUND(AVG(response_time_ms)::numeric, 2) AS responseTimeMs,
+                        SUM(CASE WHEN successful THEN 1 ELSE 0 END) AS successfulCount,
+                        COUNT(*) AS containedCount
+                    FROM monitor_checks
+                    WHERE tenant_id = :tenantId
+                    AND monitor_id = :monitorId
+                    AND checked_at BETWEEN :from AND :to
+                    GROUP BY timestamp
+                            ) sub
+                ORDER BY timestamp ASC
+            """, nativeQuery = true)
+    List<UptimeBlockProjection> findUptimeBlocks(
+            @Param("tenantId") UUID tenantId,
+            @Param("monitorId") UUID monitorId,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to,
+            @Param("timeframe") String timeframe
+            );
 
 }

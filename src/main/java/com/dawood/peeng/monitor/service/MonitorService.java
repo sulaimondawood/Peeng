@@ -16,6 +16,7 @@ import com.dawood.peeng.monitor.dtos.requests.CreateMonitorRequest;
 import com.dawood.peeng.monitor.dtos.responses.MonitorResponseDTO;
 import com.dawood.peeng.monitor.dtos.responses.MonitorStatsProjection;
 import com.dawood.peeng.monitor.dtos.responses.ResponseTimePointProjection;
+import com.dawood.peeng.monitor.dtos.responses.UptimeBlockProjection;
 import com.dawood.peeng.monitor.enums.MonitorLifecycleStatus;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
 import com.dawood.peeng.monitor.enums.TimeRange;
@@ -231,18 +232,38 @@ public class MonitorService {
 
     public List<ResponseTimePointProjection> getResponseTimes(UUID monitorId, String rangeStr) {
 
-        UUID tenantId = TenantContext.getTenantId();
+        final UUID tenantId = TenantContext.getTenantId();
 
         monitorRepository.findByIdAndTenantId(monitorId, tenantId)
-                .orElseThrow(() -> new MonitorNotFoundException("Monitor not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
+                .orElseThrow(() -> new MonitorNotFoundException(
+                        "Monitor not found",
+                        HttpStatus.NOT_FOUND,
+                        ErrorCode.NOT_FOUND));
 
         TimeRange range = TimeRange.fromString(rangeStr);
 
         LocalDateTime to = LocalDateTime.now();
         LocalDateTime from = range.getFromTimestamp(to);
 
-        return range.executeQuery(monitorCheckRepository,tenantId,monitorId,from,to);
+        return range.executeQuery(monitorCheckRepository, tenantId, monitorId, from, to);
 
 
+    }
+
+    public List<UptimeBlockProjection> getUptimeBlocks(UUID monitorId, String rangeStr) {
+
+        final UUID tenantId = TenantContext.getTenantId();
+
+        monitorRepository.findByIdAndTenantId(monitorId, tenantId)
+                .orElseThrow(() -> new MonitorNotFoundException(
+                        "Monitor not found",
+                        HttpStatus.NOT_FOUND,
+                        ErrorCode.NOT_FOUND));
+
+        TimeRange range = TimeRange.fromString(rangeStr);
+        LocalDateTime to = LocalDateTime.now();
+        LocalDateTime from = range.getFromTimestamp(to);
+
+        return range.executeUptimeProjectionQuery(monitorCheckRepository, tenantId, monitorId, from, to);
     }
 }

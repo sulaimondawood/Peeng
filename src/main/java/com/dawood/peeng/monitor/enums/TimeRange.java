@@ -1,6 +1,7 @@
 package com.dawood.peeng.monitor.enums;
 
 import com.dawood.peeng.monitor.dtos.responses.ResponseTimePointProjection;
+import com.dawood.peeng.monitor.dtos.responses.UptimeBlockProjection;
 import com.dawood.peeng.monitor.repository.MonitorCheckRepository;
 
 import java.time.LocalDateTime;
@@ -17,11 +18,16 @@ public enum TimeRange {
 
         @Override
         public List<ResponseTimePointProjection> executeQuery(MonitorCheckRepository repo, UUID tenantId, UUID monitorId, LocalDateTime from, LocalDateTime to) {
-            return repo.findHourlyBucket(tenantId,monitorId,from,to);
+            return repo.findHourlyBucket(tenantId, monitorId, from, to);
+        }
+
+        @Override
+        public List<UptimeBlockProjection> executeUptimeProjectionQuery(MonitorCheckRepository repo, UUID tenantId, UUID monitorId, LocalDateTime from, LocalDateTime to) {
+            return repo.findUptimeBlocks( tenantId, monitorId, from, to, "1 minute" );
         }
     },
 
-    TWENTY_FOUR_HOURS("24h"){
+    TWENTY_FOUR_HOURS("24h") {
         @Override
         public LocalDateTime getFromTimestamp(LocalDateTime to) {
             return to.minusDays(1);
@@ -29,10 +35,15 @@ public enum TimeRange {
 
         @Override
         public List<ResponseTimePointProjection> executeQuery(MonitorCheckRepository repo, UUID tenantId, UUID monitorId, LocalDateTime from, LocalDateTime to) {
-            return repo.find24hrBucket(tenantId,monitorId,from,to);
+            return repo.find24hrBucket(tenantId, monitorId, from, to);
+        }
+
+        @Override
+        public List<UptimeBlockProjection> executeUptimeProjectionQuery(MonitorCheckRepository repo, UUID tenantId, UUID monitorId, LocalDateTime from, LocalDateTime to) {
+            return repo.findUptimeBlocks( tenantId, monitorId, from, to, "24 minutes" );
         }
     },
-    SEVEN_DAYS("7d"){
+    SEVEN_DAYS("7d") {
         @Override
         public LocalDateTime getFromTimestamp(LocalDateTime to) {
             return to.minusDays(7);
@@ -40,47 +51,70 @@ public enum TimeRange {
 
         @Override
         public List<ResponseTimePointProjection> executeQuery(MonitorCheckRepository repo, UUID tenantId, UUID monitorId, LocalDateTime from, LocalDateTime to) {
-            return repo.find7daysBucket(tenantId,monitorId,from,to);
+            return repo.find7daysBucket(tenantId, monitorId, from, to);
+        }
+
+        @Override
+        public List<UptimeBlockProjection> executeUptimeProjectionQuery(MonitorCheckRepository repo, UUID tenantId, UUID monitorId, LocalDateTime from, LocalDateTime to) {
+            return repo.findUptimeBlocks( tenantId, monitorId, from, to, "2 hours 48 minutes" );
         }
     },
-    THIRTY_DAYS("30d"){
+    THIRTY_DAYS("30d") {
         @Override
         public LocalDateTime getFromTimestamp(LocalDateTime to) {
             return to.minusDays(30);
         }
+
         @Override
         public List<ResponseTimePointProjection> executeQuery(MonitorCheckRepository repo, UUID tenantId, UUID monitorId, LocalDateTime from, LocalDateTime to) {
-            return repo.findMonthlyBucket(tenantId,monitorId,from,to);
+            return repo.findMonthlyBucket(tenantId, monitorId, from, to);
+        }
+
+        @Override
+        public List<UptimeBlockProjection> executeUptimeProjectionQuery(MonitorCheckRepository repo, UUID tenantId, UUID monitorId, LocalDateTime from, LocalDateTime to) {
+            return repo.findUptimeBlocks( tenantId, monitorId, from, to, "12 hours" );
         }
     };
 
     private final String timeRange;
 
-    private TimeRange(String value){
+    private TimeRange(String value) {
         this.timeRange = value;
     }
 
-    public String getTimeRange(){
+    public String getTimeRange() {
         return timeRange;
     }
 
     private static final List<TimeRange> VALUES = List.of(values());
 
-    public static TimeRange fromString(String value){
-        if(value == null){
+    public static TimeRange fromString(String value) {
+        if (value == null) {
             throw new IllegalArgumentException("Time range cannot be null");
         }
 
         String cleanedValue = value.trim().toLowerCase();
 
-       return VALUES.stream()
-                .filter(range->range.timeRange.equals(cleanedValue))
+        return VALUES.stream()
+                .filter(range -> range.timeRange.equals(cleanedValue))
                 .findFirst()
-                .orElseThrow(()->new IllegalArgumentException("Unsupported range: " + value));
+                .orElseThrow(() -> new IllegalArgumentException("Unsupported range: " + value));
     }
 
     public abstract LocalDateTime getFromTimestamp(LocalDateTime to);
 
-    public abstract List<ResponseTimePointProjection> executeQuery(MonitorCheckRepository repo, UUID tenantId, UUID monitorId, LocalDateTime from, LocalDateTime to);
+    public abstract List<ResponseTimePointProjection> executeQuery(
+            MonitorCheckRepository repo,
+            UUID tenantId,
+            UUID monitorId,
+            LocalDateTime from,
+            LocalDateTime to);
+
+    public abstract List<UptimeBlockProjection> executeUptimeProjectionQuery(
+            MonitorCheckRepository repo,
+            UUID tenantId,
+            UUID monitorId,
+            LocalDateTime from,
+            LocalDateTime to);
 
 }

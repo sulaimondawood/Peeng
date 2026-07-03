@@ -6,6 +6,7 @@ import com.dawood.peeng.monitor.dtos.requests.CreateMonitorRequest;
 import com.dawood.peeng.monitor.dtos.responses.MonitorResponseDTO;
 import com.dawood.peeng.monitor.dtos.responses.MonitorStatsProjection;
 import com.dawood.peeng.monitor.dtos.responses.ResponseTimePointProjection;
+import com.dawood.peeng.monitor.dtos.responses.UptimeBlockProjection;
 import com.dawood.peeng.monitor.enums.MonitorLifecycleStatus;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
 import com.dawood.peeng.monitor.mapper.MonitorMapper;
@@ -14,6 +15,7 @@ import com.dawood.peeng.monitor.service.MonitorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -101,7 +103,14 @@ public class MonitorController {
 
     }
 
+    @GetMapping("/{monitorId}/uptime-block")
+    public ResponseEntity<ApiResponse<List<UptimeBlockProjection>>> getMonitorUptimeBlocks(
+            @PathVariable("monitorId") UUID monitorId,
+            @RequestParam(name = "range", required = false, defaultValue = "24h") String range) {
+        return ResponseEntity.ok()
+                .body(ApiResponse.success("Monitor uptime bucket successfully fetched", monitorService.getUptimeBlocks(monitorId,range)));
 
+    }
 
 
 }
