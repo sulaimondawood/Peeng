@@ -2,15 +2,16 @@ package com.dawood.peeng.monitor.controller;
 
 import com.dawood.peeng.common.dto.ApiResponse;
 import com.dawood.peeng.common.dto.Meta;
+import com.dawood.peeng.incident.dto.response.IncidentDTO;
+import com.dawood.peeng.incident.service.IncidentService;
 import com.dawood.peeng.monitor.dtos.requests.CreateMonitorRequest;
-import com.dawood.peeng.monitor.dtos.responses.MonitorResponseDTO;
-import com.dawood.peeng.monitor.dtos.responses.MonitorStatsProjection;
-import com.dawood.peeng.monitor.dtos.responses.ResponseTimePointProjection;
-import com.dawood.peeng.monitor.dtos.responses.UptimeBlockProjection;
+import com.dawood.peeng.monitor.dtos.responses.*;
 import com.dawood.peeng.monitor.enums.MonitorLifecycleStatus;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
+import com.dawood.peeng.monitor.mapper.MonitorCheckMapper;
 import com.dawood.peeng.monitor.mapper.MonitorMapper;
 import com.dawood.peeng.monitor.models.Monitor;
+import com.dawood.peeng.monitor.models.MonitorCheck;
 import com.dawood.peeng.monitor.service.MonitorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ import java.util.UUID;
 public class MonitorController {
 
     private final MonitorService monitorService;
+    private final IncidentService incidentService;
 
     @PostMapping
     public ApiResponse<Void> createMonitor(@Valid @RequestBody CreateMonitorRequest payload) {
@@ -99,7 +101,7 @@ public class MonitorController {
     public ApiResponse<List<ResponseTimePointProjection>> getMonitorResponseTimes(
             @PathVariable("monitorId") UUID monitorId,
             @RequestParam(name = "range", required = false, defaultValue = "24h") String range) {
-        return ApiResponse.success("Monitor response times successfully fetched", monitorService.getResponseTimes(monitorId,range));
+        return ApiResponse.success("Monitor response times successfully fetched", monitorService.getResponseTimes(monitorId, range));
 
     }
 
@@ -108,9 +110,42 @@ public class MonitorController {
             @PathVariable("monitorId") UUID monitorId,
             @RequestParam(name = "range", required = false, defaultValue = "24h") String range) {
         return ResponseEntity.ok()
-                .body(ApiResponse.success("Monitor uptime bucket successfully fetched", monitorService.getUptimeBlocks(monitorId,range)));
+                .body(ApiResponse.success("Monitor uptime bucket successfully fetched", monitorService.getUptimeBlocks(monitorId, range)));
 
     }
 
+    @GetMapping("/{monitorId}/checks")
+    public ResponseEntity<ApiResponse<List<MonitorCheckDTO>>> getMonitorChecks(
+            @PathVariable UUID monitorId,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "25") int size) {
+
+
+        Page<MonitorCheck> pagedChecks = monitorService.getMonitorChecks(monitorId, page, size);
+
+        Meta meta = new Meta();
+        meta.setPageNumber(pagedChecks.getNumber());
+        meta.setPageSize(pagedChecks.getSize());
+        meta.setTotalElements(pagedChecks.getTotalElements());
+        meta.setTotalPages(pagedChecks.getTotalPages());
+        meta.setLast(pagedChecks.isLast());
+
+        List<MonitorCheckDTO> checks = pagedChecks.getContent().stream()
+                .map(MonitorCheckMapper::toDTO)
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.success("Raw checks retrieved successfully", checks, meta));
+    }
+
+    @GetMapping("/{monitorId}/recent-incidents")
+    public ResponseEntity<ApiResponse<List<IncidentDTO>>> getMonitorRecentIncidents(
+            @PathVariable("monitorId") UUID monitorId) {
+
+        return ResponseEntity.ok()
+                .body(ApiResponse.success(
+                        "Monitor incidents successfully fetched",
+                        incidentService.recentIncident(monitorId)));
+
+    }
 
 }

@@ -13,10 +13,7 @@ import com.dawood.peeng.membership.exceptions.MembershipException;
 import com.dawood.peeng.membership.models.Membership;
 import com.dawood.peeng.membership.repository.MembershipRepository;
 import com.dawood.peeng.monitor.dtos.requests.CreateMonitorRequest;
-import com.dawood.peeng.monitor.dtos.responses.MonitorResponseDTO;
-import com.dawood.peeng.monitor.dtos.responses.MonitorStatsProjection;
-import com.dawood.peeng.monitor.dtos.responses.ResponseTimePointProjection;
-import com.dawood.peeng.monitor.dtos.responses.UptimeBlockProjection;
+import com.dawood.peeng.monitor.dtos.responses.*;
 import com.dawood.peeng.monitor.enums.MonitorLifecycleStatus;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
 import com.dawood.peeng.monitor.enums.TimeRange;
@@ -24,6 +21,7 @@ import com.dawood.peeng.monitor.exceptions.MonitorException;
 import com.dawood.peeng.monitor.exceptions.MonitorNotFoundException;
 import com.dawood.peeng.monitor.mapper.MonitorMapper;
 import com.dawood.peeng.monitor.models.Monitor;
+import com.dawood.peeng.monitor.models.MonitorCheck;
 import com.dawood.peeng.monitor.repository.MonitorCheckRepository;
 import com.dawood.peeng.monitor.repository.MonitorRepository;
 import com.dawood.peeng.tenant.context.TenantContext;
@@ -254,16 +252,35 @@ public class MonitorService {
 
         final UUID tenantId = TenantContext.getTenantId();
 
-        monitorRepository.findByIdAndTenantId(monitorId, tenantId)
-                .orElseThrow(() -> new MonitorNotFoundException(
-                        "Monitor not found",
-                        HttpStatus.NOT_FOUND,
-                        ErrorCode.NOT_FOUND));
+        validateMonitorAccess(monitorId, tenantId);
 
         TimeRange range = TimeRange.fromString(rangeStr);
         LocalDateTime to = LocalDateTime.now();
         LocalDateTime from = range.getFromTimestamp(to);
 
         return range.executeUptimeProjectionQuery(monitorCheckRepository, tenantId, monitorId, from, to);
+    }
+
+    public Page<MonitorCheck> getMonitorChecks(UUID monitorId, int page, int size){
+
+        final UUID tenantId = TenantContext.getTenantId();
+
+        validateMonitorAccess(monitorId,tenantId);
+
+        int safeSize = Math.min(size,50);
+
+        Pageable pageable = PageRequest.of(page,safeSize);
+
+        return monitorCheckRepository.findAllByTenant_IdAndMonitorIdOrderByCheckedAtDesc(tenantId,monitorId,pageable);
+
+    }
+
+    public Monitor validateMonitorAccess(UUID monitorId, UUID tenantId){
+      return  monitorRepository.findByIdAndTenantId(monitorId, tenantId)
+                .orElseThrow(() -> new MonitorNotFoundException(
+                        "Monitor not found",
+                        HttpStatus.NOT_FOUND,
+                        ErrorCode.NOT_FOUND));
+
     }
 }

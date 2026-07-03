@@ -1,24 +1,32 @@
 package com.dawood.peeng.incident.service;
 
 import com.dawood.peeng.common.enums.ErrorCode;
+import com.dawood.peeng.incident.dto.response.IncidentDTO;
 import com.dawood.peeng.incident.enums.IncidentStatus;
 import com.dawood.peeng.incident.exceptions.IncidentNotFoundException;
+import com.dawood.peeng.incident.mapper.IncidentMapper;
 import com.dawood.peeng.incident.models.Incident;
 import com.dawood.peeng.incident.repository.IncidentRepository;
 import com.dawood.peeng.monitor.models.Monitor;
+import com.dawood.peeng.monitor.service.MonitorService;
+import com.dawood.peeng.tenant.context.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class IncidentService {
 
     private final IncidentRepository incidentRepository;
+    private final MonitorService monitorService;
+
 
     public Incident openIncident(Monitor monitor) {
 
@@ -76,4 +84,15 @@ public class IncidentService {
 
         return incidentRepository.save(incident);
     }
+
+    public List<IncidentDTO> recentIncident(UUID monitorId){
+        final UUID tenantId = TenantContext.getTenantId();
+        monitorService.validateMonitorAccess(monitorId,tenantId);
+
+        return incidentRepository.findTop10ByMonitorIdAndTenantIdOrderByStartedAtDesc(monitorId,tenantId)
+                .stream()
+                .map(IncidentMapper::toDTO)
+                .toList();
+    }
+
 }

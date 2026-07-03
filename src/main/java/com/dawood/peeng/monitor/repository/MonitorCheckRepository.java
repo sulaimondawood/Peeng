@@ -8,6 +8,8 @@ import java.util.UUID;
 import com.dawood.peeng.monitor.dtos.responses.MonitorStatsProjection;
 import com.dawood.peeng.monitor.dtos.responses.ResponseTimePointProjection;
 import com.dawood.peeng.monitor.dtos.responses.UptimeBlockProjection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.dawood.peeng.monitor.models.MonitorCheck;
@@ -122,7 +124,7 @@ public interface MonitorCheckRepository extends JpaRepository<MonitorCheck, UUID
                     ROUND((sub.successfulCount::numeric / sub.containedCount::numeric) *100,2) AS uptimePercentage
                 FROM(
                     SELECT 
-                        DATE_BIN(:timeframe::interval,checked_at,'1970-01-01 00:00:00') AS timestamp,
+                        DATE_BIN(CAST(:timeframe AS interval), checked_at,'1970-01-01 00:00:00') AS timestamp,
                         ROUND(AVG(response_time_ms)::numeric, 2) AS responseTimeMs,
                         SUM(CASE WHEN successful THEN 1 ELSE 0 END) AS successfulCount,
                         COUNT(*) AS containedCount
@@ -142,4 +144,10 @@ public interface MonitorCheckRepository extends JpaRepository<MonitorCheck, UUID
             @Param("timeframe") String timeframe
             );
 
+
+    Page<MonitorCheck> findAllByTenant_IdAndMonitorIdOrderByCheckedAtDesc(
+            UUID monitorId,
+            UUID tenantId,
+            Pageable pageable
+    );
 }
