@@ -2,6 +2,7 @@ package com.dawood.peeng.incident.models;
 
 import com.dawood.peeng.common.models.MetaData;
 import com.dawood.peeng.incident.enums.IncidentStatus;
+import com.dawood.peeng.incident.enums.Severity;
 import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.tenant.model.Tenant;
 import jakarta.persistence.*;
@@ -62,4 +63,23 @@ public class Incident extends MetaData {
     private LocalDateTime acknowledgedAt;
 
     private UUID acknowledgedByUserId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Severity severity;
+
+//    Further updates
+//    @Column(columnDefinition = "TEXT")
+//    private String rootCauseStatement; // From UI Section 01
+//
+//    @Column(columnDefinition = "TEXT")
+//    private String preventativeActions; // From UI Section 02
+//
+//    @ElementCollection
+//    @CollectionTable(name = "incident_remediation_tasks", joinColumns = @JoinColumn(name = "incident_id"))
+//    @Column(name = "task")
+//    private List<String> remediationTasks; // From UI Section 03 (One per line)
+//
+//    @Builder.Default
+//    private boolean rcaLocked = false; // "Drafting State" vs "Locked State" toggle
 }

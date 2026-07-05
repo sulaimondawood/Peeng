@@ -13,6 +13,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
@@ -56,7 +57,11 @@ public class MonitorWorkerConsumer {
                     .toBodilessEntity();
             monitorCheckService.processSuccess(scheduledMonitor, tenantId, start, response);
 
-        } catch (RestClientException e) {
+        }catch (ResourceAccessException e){
+            log.warn("Connection or Read timed out for {}", scheduledMonitor.getName());
+            monitorCheckService.processFailure(scheduledMonitor, tenantId, start, response, e.getMessage());
+        }
+        catch (RestClientException e) {
             log.warn("Ping failed for monitor {}: {}", scheduledMonitor.getName(), e.getMessage());
             monitorCheckService.processFailure(scheduledMonitor, tenantId, start, response, e.getMessage());
 

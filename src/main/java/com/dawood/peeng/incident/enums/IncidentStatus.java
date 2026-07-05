@@ -25,7 +25,7 @@ public enum IncidentStatus {
         List<IncidentStatus> VALUES = List.of(values());
 
         return VALUES.stream()
-                .filter(status -> status.value.equals(value))
+                .filter(status -> status.value.equals(cleanedValue))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Unsupported incident status " + value));
 

@@ -3,6 +3,7 @@ package com.dawood.peeng.incident.service;
 import com.dawood.peeng.common.enums.ErrorCode;
 import com.dawood.peeng.incident.dto.request.IncidentFilterRequest;
 import com.dawood.peeng.incident.dto.response.IncidentDTO;
+import com.dawood.peeng.incident.enums.ActivityType;
 import com.dawood.peeng.incident.enums.DateRangeBucket;
 import com.dawood.peeng.incident.enums.IncidentStatus;
 import com.dawood.peeng.incident.exceptions.IncidentNotFoundException;
@@ -32,6 +33,7 @@ public class IncidentService {
 
     private final IncidentRepository incidentRepository;
     private final MonitorService monitorService;
+    private final IncidentActivityLogService incidentActivityLogService;
 
 
     public Incident openIncident(Monitor monitor) {
@@ -58,7 +60,16 @@ public class IncidentService {
                 .acknowledged(false)
                 .build();
 
-        return incidentRepository.save(newIncident);
+        Incident savedIncident = incidentRepository.save(newIncident);
+
+        incidentActivityLogService.logActivity(
+                savedIncident,
+                ActivityType.CRITICAL,
+                "Incident threshold triggered",
+                savedIncident.getLatestErrorMessage()
+                );
+
+        return savedIncident;
 
     }
 
