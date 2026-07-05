@@ -1,6 +1,7 @@
 package com.dawood.peeng.incident.service;
 
 import com.dawood.peeng.common.enums.ErrorCode;
+import com.dawood.peeng.incident.dto.request.IncidentFilterRequest;
 import com.dawood.peeng.incident.dto.response.IncidentDTO;
 import com.dawood.peeng.incident.enums.DateRangeBucket;
 import com.dawood.peeng.incident.enums.IncidentStatus;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -110,24 +112,19 @@ public class IncidentService {
 
     }
 
-    public Page<Incident> getAllIncidents(
-            String statusStr,
-            UUID monitorId,
-            String dateBucket,
-            int page,
-            int size){
+    public Page<Incident> getAllIncidents( IncidentFilterRequest request, UUID monitorId){
 
         UUID tenantId = TenantContext.getTenantId();
-        Pageable pageable = PageRequest.of(page,size);
+        Pageable pageable = PageRequest.of(request.page(),request.size());
 
-        IncidentStatus status = IncidentStatus.fromString(statusStr);
+        IncidentStatus status = IncidentStatus.fromString(request.statusStr());
 
-        DateRangeBucket rangeBucket = DateRangeBucket.fromString(dateBucket);
+        DateRangeBucket rangeBucket = DateRangeBucket.fromString(request.dateBucket());
         LocalDateTime to = LocalDateTime.now();
         LocalDateTime from = rangeBucket.getFromLocalDateTime(to);
 
 
-        return incidentRepository.findAllIncidents(tenantId,status,monitorId, from, to, pageable);
+        return incidentRepository.findAllIncidents(tenantId,status, monitorId, from, to, pageable);
 
 
     }
