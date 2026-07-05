@@ -36,9 +36,7 @@ public enum DateRangeBucket {
     }
 
     public static DateRangeBucket fromString(String value){
-        if (value == null) {
-            throw new IllegalArgumentException("Time range cannot be null");
-        }
+        if (value == null) return null;
 
         String cleanedValue = value.trim().toLowerCase();
 

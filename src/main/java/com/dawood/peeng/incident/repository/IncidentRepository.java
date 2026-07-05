@@ -37,8 +37,8 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
                 WHERE i.tenant.id=:tenantId
                 AND (:status IS NULL OR i.status=:status)
                 AND (:monitorId IS NULL OR i.monitor.id=:monitorId)
-                AND (:from IS NULL OR  i.monitor.startedAt >= :from)
-                AND(:to IS NULL OR i.monitor.startedAt <= :to)
+                AND (:from IS NULL OR  i.startedAt >= :from)
+                AND(:to IS NULL OR i.startedAt <= :to)
             """)
     Page<Incident> findAllIncidents(
             UUID tenantId,

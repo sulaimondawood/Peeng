@@ -112,7 +112,7 @@ public class IncidentService {
 
     }
 
-    public Page<Incident> getAllIncidents( IncidentFilterRequest request, UUID monitorId){
+    public Page<Incident> getAllIncidents( IncidentFilterRequest request){
 
         UUID tenantId = TenantContext.getTenantId();
         Pageable pageable = PageRequest.of(request.page(),request.size());
@@ -124,7 +124,7 @@ public class IncidentService {
         LocalDateTime from = rangeBucket.getFromLocalDateTime(to);
 
 
-        return incidentRepository.findAllIncidents(tenantId,status, monitorId, from, to, pageable);
+        return incidentRepository.findAllIncidents(tenantId,status, request.monitorId(), from, to, pageable);
 
 
     }
