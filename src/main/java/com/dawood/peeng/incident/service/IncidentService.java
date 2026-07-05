@@ -21,7 +21,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.annotation.Validated;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -50,14 +49,18 @@ public class IncidentService {
             return existingIncident.get();
         }
 
-
         int statusCode = result.response() != null ? result.response().getStatusCode().value() : 0;
 
-        Severity severity = result.isTimeout() || statusCode >= 500 ? Severity.CRITICAL :
-                result.isHighLatency() ? Severity.WARNING : Severity.INFO;
+        boolean isNetworkOrAppCrash = result.isTimeout() || (statusCode >= 400);
+        Severity severity = isNetworkOrAppCrash ? Severity.CRITICAL :
+                result.isHighLatency() ? Severity.WARNING :
+                        Severity.INFO;
 
-        ActivityType activityType = severity == Severity.CRITICAL ? ActivityType.CRITICAL :
-                ActivityType.WARNING;
+        ActivityType activityType = switch (severity) {
+            case CRITICAL -> ActivityType.CRITICAL;
+            case WARNING -> ActivityType.WARNING;
+            default -> ActivityType.DIAGNOSTIC;
+        };
 
         Incident newIncident = Incident.builder()
                 .monitor(monitor)
@@ -111,13 +114,13 @@ public class IncidentService {
         );
         incident.setResolvedResponseTimeMs(monitor.getLatestResponseTimeMs());
 
-        Incident savedIncident =  incidentRepository.save(incident);
+        Incident savedIncident = incidentRepository.save(incident);
 
         incidentActivityLogService.logActivity(
                 savedIncident,
                 ActivityType.RECOVERY,
                 "Incident threshold triggered",
-               "Automatic service restoration: Monitor recovered status back to UP (200 OK) with stable metrics."
+                "Automatic service restoration: Monitor recovered status back to UP (200 OK) with stable metrics."
         );
 
         return savedIncident;
