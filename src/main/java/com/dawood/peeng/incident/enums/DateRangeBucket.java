@@ -41,7 +41,7 @@ public enum DateRangeBucket {
         String cleanedValue = value.trim().toLowerCase();
 
        return Arrays.stream(values())
-                .filter(bucket->bucket.rangeBucket.equalsIgnoreCase(value))
+                .filter(bucket->bucket.rangeBucket.equalsIgnoreCase(cleanedValue))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Invalid date range: " + value));
 

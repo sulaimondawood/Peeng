@@ -112,20 +112,24 @@ public class IncidentService {
 
     }
 
-    public Page<Incident> getAllIncidents( IncidentFilterRequest request){
+    public Page<Incident> getAllIncidents(IncidentFilterRequest request) {
 
         UUID tenantId = TenantContext.getTenantId();
-        Pageable pageable = PageRequest.of(request.page(),request.size());
+        Pageable pageable = PageRequest.of(request.page(), request.size());
 
-        IncidentStatus status = IncidentStatus.fromString(request.statusStr());
+        IncidentStatus status = IncidentStatus.fromString(request.status());
 
         DateRangeBucket rangeBucket = DateRangeBucket.fromString(request.dateBucket());
-        LocalDateTime to = LocalDateTime.now();
-        LocalDateTime from = rangeBucket.getFromLocalDateTime(to);
 
+        LocalDateTime to = null;
+        LocalDateTime from = null;
 
-        return incidentRepository.findAllIncidents(tenantId,status, request.monitorId(), from, to, pageable);
+        if (rangeBucket != null) {
+            to = LocalDateTime.now();
+            from = rangeBucket.getFromLocalDateTime(to);
+        }
 
+        return incidentRepository.findAllIncidents(tenantId, status, request.monitorId(), from, to, pageable);
 
     }
 

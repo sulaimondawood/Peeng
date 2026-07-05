@@ -51,7 +51,7 @@ public class IncidentController {
                 .map(IncidentMapper::toDTO)
                 .toList();
 
-        return ResponseEntity.ok().body(ApiResponse.success("All incidents fetched successfully",incidents ));
+        return ResponseEntity.ok().body(ApiResponse.success("All incidents fetched successfully",incidents,meta ));
 
     }
 

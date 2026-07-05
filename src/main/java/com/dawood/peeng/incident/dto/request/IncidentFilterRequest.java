@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @ValidDateFilter
 public record IncidentFilterRequest(
-        String statusStr,
+        String status,
         UUID monitorId,
         String dateBucket,
         LocalDate date,

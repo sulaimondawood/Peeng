@@ -37,14 +37,14 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
                 WHERE i.tenant.id=:tenantId
                 AND (:status IS NULL OR i.status=:status)
                 AND (:monitorId IS NULL OR i.monitor.id=:monitorId)
-                AND (:from IS NULL OR  i.startedAt >= :from)
-                AND(:to IS NULL OR i.startedAt <= :to)
+                AND (CAST(:from AS timestamp) IS NULL OR  i.startedAt >= :from)
+                AND(CAST(:to AS timestamp) IS NULL OR i.startedAt <= :to)
             """)
     Page<Incident> findAllIncidents(
-            UUID tenantId,
-            IncidentStatus status,
-            UUID monitorId,
-            LocalDateTime from,
-            LocalDateTime to,
+           @Param("tenantId") UUID tenantId,
+           @Param("status") IncidentStatus status,
+           @Param("monitorId") UUID monitorId,
+           @Param("from") LocalDateTime from,
+           @Param("to") LocalDateTime to,
             Pageable pageable);
 }
