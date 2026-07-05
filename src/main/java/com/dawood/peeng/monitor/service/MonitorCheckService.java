@@ -35,9 +35,9 @@ public class MonitorCheckService {
     private final TenantRepository tenantRepository;
 
     @Transactional
-    public void processSuccess(Monitor monitor, UUID tenantId, long startTime, ResponseEntity<Void> response) {
+    public void processSuccess(Monitor monitor, UUID tenantId, CheckResult result) {
 
-        long responseTime = System.currentTimeMillis() - startTime;
+        long responseTime = System.currentTimeMillis() - result.startTime();
         LocalDateTime now = LocalDateTime.now();
 
         Tenant tenant = tenantRepository.findById(tenantId)
@@ -46,7 +46,7 @@ public class MonitorCheckService {
                         HttpStatus.NOT_FOUND,
                         ErrorCode.NOT_FOUND));
 
-        int statusCode = response.getStatusCode().value();
+        int statusCode = result.response().getStatusCode().value();
 
         MonitorCheck monitorCheck = MonitorCheck.builder()
                 .monitor(monitor)
@@ -58,6 +58,12 @@ public class MonitorCheckService {
                 .build();
 
         monitorCheckRepository.save(monitorCheck);
+
+        if (result.isHighLatency()) {
+            log.warn("Monitor {} responded with 200 OK but breached latency limits.", monitor.getName());
+            this.processFailure(monitor, tenantId, result);
+            return;
+        }
 
         monitor.setNextCheckAt(
                 now.plusSeconds(monitor.getIntervalInSeconds())
@@ -86,7 +92,7 @@ public class MonitorCheckService {
             Monitor monitor,
             UUID tenantId,
             CheckResult result
-            ) {
+    ) {
         long responseTime = System.currentTimeMillis() - result.startTime();
         LocalDateTime now = LocalDateTime.now();
 
@@ -103,7 +109,7 @@ public class MonitorCheckService {
         MonitorCheck monitorCheck = MonitorCheck.builder()
                 .monitor(monitor)
                 .tenant(tenant)
-                .successful(false)
+                .successful(result.isHighLatency() && result.message() == null)
                 .statusCode(statusCode)
                 .responseTimeMs(responseTime)
                 .errorMessage(result.message())
@@ -120,13 +126,17 @@ public class MonitorCheckService {
         monitor.setLatestStatusCode(statusCode);
         monitor.setLatestResponseTimeMs(responseTime);
         monitor.setLastCheckedAt(LocalDateTime.now());
+        monitor.setLatestErrorMessage(result.isHighLatency() && result.message() == null ?
+                "High latency detected: Response took" + (result.responseTimeInMs() / 1000) + "secs" :
+                result.message()
+        );
 
         Monitor savedMonitor = monitorRepository.save(monitor);
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                monitorStateService.handleFailure(savedMonitor);
+                monitorStateService.handleFailure(savedMonitor, result);
 
             }
         });

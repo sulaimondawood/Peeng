@@ -4,7 +4,6 @@ import com.dawood.peeng.common.enums.ErrorCode;
 import com.dawood.peeng.incident.exceptions.IncidentNotFoundException;
 import com.dawood.peeng.incident.models.Incident;
 import com.dawood.peeng.incident.repository.IncidentRepository;
-import com.dawood.peeng.messaging.producers.EmailProducer;
 import com.dawood.peeng.notification.model.NotificationChannelConfig;
 import com.dawood.peeng.notification.respository.NotificationChannelConfigRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,6 @@ public class NotificationService {
 
     private final NotificationChannelConfigRepository channelConfigRepository;
     private final EmailNotificationProvider emailNotificationProvider;
-    private final EmailProducer emailProducer;
     private final IncidentRepository incidentRepository;
 
     public void notifyIncidentOpened(UUID incidentId) {

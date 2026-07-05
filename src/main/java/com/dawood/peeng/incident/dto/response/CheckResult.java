@@ -7,7 +7,8 @@ public record CheckResult(
        ResponseEntity<Void> response,
        String message,
        boolean isTimeout,
-       boolean isHighLatency
+       boolean isHighLatency,
+       long responseTimeInMs
 ) {
 
 }

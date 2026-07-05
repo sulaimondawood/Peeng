@@ -1,6 +1,14 @@
 package com.dawood.peeng.messaging.consumers;
 
 import com.dawood.peeng.configs.RabbitMQConfig;
+import com.dawood.peeng.incident.enums.ActivityType;
+import com.dawood.peeng.incident.enums.IncidentStatus;
+import com.dawood.peeng.incident.models.Incident;
+import com.dawood.peeng.incident.models.IncidentActivity;
+import com.dawood.peeng.incident.repository.IncidentActivityRepository;
+import com.dawood.peeng.incident.repository.IncidentRepository;
+import com.dawood.peeng.incident.service.IncidentActivityLogService;
+import com.dawood.peeng.incident.service.IncidentService;
 import com.dawood.peeng.messaging.events.IncidentEvent;
 import com.dawood.peeng.messaging.mails.EmailService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +31,8 @@ public class NotificationConsumer {
 
     private final TemplateEngine templateEngine;
     private final EmailService emailService;
+    private final IncidentRepository incidentRepository;
+    private final IncidentActivityLogService activityLogService;
 
     @Value("${app.client-url}")
     private String clientUrl;
@@ -60,11 +70,18 @@ public class NotificationConsumer {
             emailService.send(event.getDestination(), subject, body);
             log.info("Successfully sent incident email notification to {}", event.getDestination());
 
+            incidentRepository.findById(
+                    event.getIncidentId()).ifPresent(existingIncident -> activityLogService.logActivity(
+                    existingIncident,
+                    ActivityType.ESCALATION,
+                    "Alert Dispatched",
+                    "Outage notifications successfully dispatched to channel: " + event.getDestination()
+            ));
+
         } catch (Exception e) {
             log.error("Failed to process or send email notification for incident ID: #{}", event.getIncidentId(), e);
             throw e;
         }
-
 
     }
 

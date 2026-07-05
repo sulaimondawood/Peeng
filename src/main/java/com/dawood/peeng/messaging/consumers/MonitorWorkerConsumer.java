@@ -82,15 +82,16 @@ public class MonitorWorkerConsumer {
 
         responseTime = System.currentTimeMillis() - startTime;
 
+        long warningThreshold = (scheduledMonitor.getTimeoutInSeconds() * 1000) * 7 / 10;
+        boolean isLatencyHigh = responseTime >= warningThreshold;
+
+        CheckResult result = new CheckResult(startTime, response, errorMessage, isTimeout, isLatencyHigh, responseTime);
+
         if (errorMessage == null && !isTimeout && response != null) {
-            monitorCheckService.processSuccess(scheduledMonitor, tenantId, startTime, response);
+            monitorCheckService.processSuccess(scheduledMonitor, tenantId, result);
         } else {
-            long warningThreshold = (scheduledMonitor.getTimeoutInSeconds() * 1000) * 7 / 10;
-            boolean isLatencyHigh = responseTime >= warningThreshold;
-            CheckResult result = new CheckResult(startTime, response, errorMessage, isTimeout, isLatencyHigh);
             monitorCheckService.processFailure(scheduledMonitor, tenantId, result);
         }
-
 
     }
 

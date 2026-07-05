@@ -2,10 +2,12 @@ package com.dawood.peeng.incident.service;
 
 import com.dawood.peeng.common.enums.ErrorCode;
 import com.dawood.peeng.incident.dto.request.IncidentFilterRequest;
+import com.dawood.peeng.incident.dto.response.CheckResult;
 import com.dawood.peeng.incident.dto.response.IncidentDTO;
 import com.dawood.peeng.incident.enums.ActivityType;
 import com.dawood.peeng.incident.enums.DateRangeBucket;
 import com.dawood.peeng.incident.enums.IncidentStatus;
+import com.dawood.peeng.incident.enums.Severity;
 import com.dawood.peeng.incident.exceptions.IncidentNotFoundException;
 import com.dawood.peeng.incident.mapper.IncidentMapper;
 import com.dawood.peeng.incident.models.Incident;
@@ -36,7 +38,7 @@ public class IncidentService {
     private final IncidentActivityLogService incidentActivityLogService;
 
 
-    public Incident openIncident(Monitor monitor) {
+    public Incident openIncident(Monitor monitor, CheckResult result) {
 
         Optional<Incident> existingIncident =
                 incidentRepository.findByMonitor_IdAndStatus(
@@ -48,6 +50,15 @@ public class IncidentService {
             return existingIncident.get();
         }
 
+
+        int statusCode = result.response() != null ? result.response().getStatusCode().value() : 0;
+
+        Severity severity = result.isTimeout() || statusCode >= 500 ? Severity.CRITICAL :
+                result.isHighLatency()  ? Severity.WARNING : Severity.INFO;
+
+        ActivityType activityType = severity == Severity.CRITICAL ? ActivityType.CRITICAL :
+                ActivityType.WARNING;
+
         Incident newIncident = Incident.builder()
                 .monitor(monitor)
                 .tenant(monitor.getTenant())
@@ -57,6 +68,7 @@ public class IncidentService {
                 .failureCount(monitor.getConsecutiveFailures())
                 .initialStatusCode(monitor.getLatestStatusCode())
                 .initialResponseTimeMs(monitor.getLatestResponseTimeMs())
+                .severity(severity)
                 .acknowledged(false)
                 .build();
 
@@ -64,10 +76,10 @@ public class IncidentService {
 
         incidentActivityLogService.logActivity(
                 savedIncident,
-                ActivityType.CRITICAL,
+                activityType,
                 "Incident threshold triggered",
                 savedIncident.getLatestErrorMessage()
-                );
+        );
 
         return savedIncident;
 

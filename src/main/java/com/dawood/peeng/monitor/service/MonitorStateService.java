@@ -1,5 +1,6 @@
 package com.dawood.peeng.monitor.service;
 
+import com.dawood.peeng.incident.dto.response.CheckResult;
 import com.dawood.peeng.incident.events.IncidentOpenedEvent;
 import com.dawood.peeng.incident.events.IncidentResolvedEvent;
 import com.dawood.peeng.incident.models.Incident;
@@ -57,7 +58,7 @@ public class MonitorStateService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleFailure(Monitor monitor) {
+    public void handleFailure(Monitor monitor, CheckResult result) {
 
         if (monitor.getConsecutiveFailures() >= monitor.getFailureThreshold()) {
             if (!monitor.isIncidentOpen()) {
@@ -70,7 +71,7 @@ public class MonitorStateService {
 
                 monitorRepository.save(monitor);
 
-                Incident openedIncident = incidentService.openIncident(monitor);
+                Incident openedIncident = incidentService.openIncident(monitor, result);
                 log.info("Firing fresh incident alert for monitor: {}", monitor.getName());
                 applicationEventPublisher.publishEvent(new IncidentOpenedEvent(openedIncident.getId()));
             }

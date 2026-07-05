@@ -3,6 +3,7 @@ package com.dawood.peeng.messaging.events;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -17,7 +18,7 @@ public class IncidentEvent {
 
     private String monitorUrl;
 
-    private String incidentId;
+    private UUID incidentId;
 
     private Integer statusCode;
 
@@ -38,6 +39,8 @@ public class IncidentEvent {
     private Long durationSeconds;
 
     private String resolvedAt;
+
+    private UUID monitorId;
 
 
 }
