@@ -54,7 +54,7 @@ public class IncidentService {
         int statusCode = result.response() != null ? result.response().getStatusCode().value() : 0;
 
         Severity severity = result.isTimeout() || statusCode >= 500 ? Severity.CRITICAL :
-                result.isHighLatency()  ? Severity.WARNING : Severity.INFO;
+                result.isHighLatency() ? Severity.WARNING : Severity.INFO;
 
         ActivityType activityType = severity == Severity.CRITICAL ? ActivityType.CRITICAL :
                 ActivityType.WARNING;
@@ -111,7 +111,16 @@ public class IncidentService {
         );
         incident.setResolvedResponseTimeMs(monitor.getLatestResponseTimeMs());
 
-        return incidentRepository.save(incident);
+        Incident savedIncident =  incidentRepository.save(incident);
+
+        incidentActivityLogService.logActivity(
+                savedIncident,
+                ActivityType.RECOVERY,
+                "Incident threshold triggered",
+               "Automatic service restoration: Monitor recovered status back to UP (200 OK) with stable metrics."
+        );
+
+        return savedIncident;
     }
 
     public List<IncidentDTO> recentIncident(UUID monitorId) {

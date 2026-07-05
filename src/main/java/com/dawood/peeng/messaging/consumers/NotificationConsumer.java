@@ -44,18 +44,17 @@ public class NotificationConsumer {
     public void consumeIncidentOpenedNotification(IncidentEvent event) {
         Context ctx = new Context();
 
-        Map<String, Object> variables = Map.of(
-                "logoUrl", clientUrl + "/logo.png",
-                "workspaceName", event.getWorkspaceName(),
-                "monitorName", event.getMonitorName(),
-                "monitorUrl", event.getMonitorUrl(),
-                "incidentId", event.getIncidentId(),
-                "statusCode", event.getStatusCode(),
-                "responseTime", formatDurationMS(event.getResponseTimeMS()),
-                "failureCount", event.getFailureCount(),
-                "latestError", event.getErrorMessage(),
-                "dashboardUrl", event.getDashboardIncidentUrl()
-        );
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("logoUrl", clientUrl + "/logo.png");
+        variables.put("workspaceName", event.getWorkspaceName());
+        variables.put("monitorName", event.getMonitorName());
+        variables.put("monitorUrl", event.getMonitorUrl());
+        variables.put("incidentId", event.getIncidentId());
+        variables.put("statusCode", event.getStatusCode());
+        variables.put("responseTime", formatDurationMS(event.getResponseTimeMS()));
+        variables.put("failureCount", event.getFailureCount());
+        variables.put("latestError", event.getErrorMessage());
+        variables.put("dashboardUrl", event.getDashboardIncidentUrl());
 
         ctx.setVariables(variables);
 
@@ -116,6 +115,14 @@ public class NotificationConsumer {
             String body = templateEngine.process("incident-resolved", ctx);
             emailService.send(event.getDestination(), subject, body);
             log.info("Successfully sent incident recovery email notification to {}", event.getDestination());
+
+            incidentRepository.findById(
+                    event.getIncidentId()).ifPresent(existingIncident -> activityLogService.logActivity(
+                    existingIncident,
+                    ActivityType.ESCALATION,
+                    "Recovery Alert Dispatched",
+                    "Recovery and service restoration notifications successfully dispatched to destination: " + event.getDestination()
+            ));
 
         } catch (Exception e) {
             log.error("Failed to process or send email notification for incident ID: #{}", event.getIncidentId(), e);
