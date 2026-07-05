@@ -1,6 +1,7 @@
 package com.dawood.peeng.monitor.service;
 
 import com.dawood.peeng.common.enums.ErrorCode;
+import com.dawood.peeng.incident.dto.response.CheckResult;
 import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.monitor.models.MonitorCheck;
 import com.dawood.peeng.monitor.repository.MonitorCheckRepository;
@@ -81,9 +82,12 @@ public class MonitorCheckService {
     }
 
     @Transactional
-    public void processFailure(Monitor monitor, UUID tenantId, long startTime, ResponseEntity<Void> response,
-                               String message) {
-        long responseTime = System.currentTimeMillis() - startTime;
+    public void processFailure(
+            Monitor monitor,
+            UUID tenantId,
+            CheckResult result
+            ) {
+        long responseTime = System.currentTimeMillis() - result.startTime();
         LocalDateTime now = LocalDateTime.now();
 
         Tenant tenant = tenantRepository.findById(tenantId)
@@ -92,7 +96,7 @@ public class MonitorCheckService {
                         HttpStatus.NOT_FOUND,
                         ErrorCode.NOT_FOUND));
 
-        Integer statusCode = Optional.ofNullable(response)
+        Integer statusCode = Optional.ofNullable(result.response())
                 .map((res) -> res.getStatusCode().value())
                 .orElse(0);
 
@@ -102,7 +106,7 @@ public class MonitorCheckService {
                 .successful(false)
                 .statusCode(statusCode)
                 .responseTimeMs(responseTime)
-                .errorMessage(message)
+                .errorMessage(result.message())
                 .checkedAt(LocalDateTime.now())
                 .build();
 

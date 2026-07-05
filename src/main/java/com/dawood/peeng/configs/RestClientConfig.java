@@ -25,4 +25,10 @@ public class RestClientConfig {
 
   }
 
+  @Bean
+  public RestClient.Builder restClientBuilder() {
+    return RestClient.builder()
+            .defaultHeader("User-Agent", "Peeng/1.0 API Monitor");
+  }
+
 }

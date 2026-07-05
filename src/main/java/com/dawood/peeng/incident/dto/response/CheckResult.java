@@ -1,10 +1,13 @@
 package com.dawood.peeng.incident.dto.response;
 
+import org.springframework.http.ResponseEntity;
+
 public record CheckResult(
-        int statusCode,
-        long responseTimeMs,
-        boolean isTimeout,     
-        String errorMessage
+       long startTime,
+       ResponseEntity<Void> response,
+       String message,
+       boolean isTimeout,
+       boolean isHighLatency
 ) {
 
 }
