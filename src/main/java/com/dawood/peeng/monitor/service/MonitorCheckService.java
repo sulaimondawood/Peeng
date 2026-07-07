@@ -183,7 +183,7 @@ public class MonitorCheckService {
             monitor.setStatus(MonitorStatus.PENDING);
             monitor.setLastStatusChangeAt(LocalDateTime.now());
         }
-            monitorRepository.save(monitor);
+        monitorRepository.save(monitor);
 
     }
 

@@ -28,6 +28,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +40,7 @@ public class NotificationConsumer {
     private final IncidentRepository incidentRepository;
     private final IncidentActivityLogService activityLogService;
     private final IncidentNotificationTraceRepository incidentNotificationTraceRepository;
+    private final IncidentActivityRepository activityRepository;
 
     @Value("${app.client-url}")
     private String clientUrl;
@@ -88,12 +90,8 @@ public class NotificationConsumer {
                         "Outage notifications successfully dispatched to channel: " + event.getDestination()
                 );
 
-                IncidentNotificationTrace notificationTrace = new IncidentNotificationTrace();
-                notificationTrace.setIncident(incident);
-                notificationTrace.setChannel(NotificationChannel.EMAIL);
-                notificationTrace.setStatus(DeliveryStatus.DELIVERED);
-                notificationTrace.setTargetChannelName(event.getDestination());
-                incidentNotificationTraceRepository.save(notificationTrace);
+                updateNotificationTrace(incident, NotificationChannel.EMAIL, event.getDestination(), DeliveryStatus.DELIVERED);
+
             }
 
 
@@ -103,12 +101,22 @@ public class NotificationConsumer {
             if (existingIncident.isPresent()) {
                 Incident incident = existingIncident.get();
 
-                IncidentNotificationTrace notificationTrace = new IncidentNotificationTrace();
-                notificationTrace.setIncident(incident);
-                notificationTrace.setChannel(NotificationChannel.EMAIL);
-                notificationTrace.setStatus(DeliveryStatus.FAILED);
-                notificationTrace.setTargetChannelName(event.getDestination());
-                incidentNotificationTraceRepository.save(notificationTrace);
+                boolean alreadyLogged = activityRepository.existsByIncidentAndTypeAndTitle(
+                        incident, ActivityType.ESCALATION, "Alert Dispatched (Failed)"
+                );
+
+                if (!alreadyLogged) {
+                    activityLogService.logActivity(
+                            incident,
+                            ActivityType.ESCALATION,
+                            "Alert Dispatched (Failed)",
+                            "Outage notifications was not successfully dispatched to channel: " + event.getDestination()
+
+                    );
+                }
+
+                updateNotificationTrace(incident, NotificationChannel.EMAIL, event.getDestination(), DeliveryStatus.FAILED);
+
             }
 
             throw e;
@@ -162,12 +170,8 @@ public class NotificationConsumer {
                         "Recovery and service restoration notifications successfully dispatched to destination: " + event.getDestination()
                 );
 
-                IncidentNotificationTrace notificationTrace = new IncidentNotificationTrace();
-                notificationTrace.setIncident(incident);
-                notificationTrace.setChannel(NotificationChannel.EMAIL);
-                notificationTrace.setStatus(DeliveryStatus.DELIVERED);
-                notificationTrace.setTargetChannelName(event.getDestination());
-                incidentNotificationTraceRepository.save(notificationTrace);
+                updateNotificationTrace(incident, NotificationChannel.EMAIL, event.getDestination(), DeliveryStatus.DELIVERED);
+
             }
 
 
@@ -177,12 +181,23 @@ public class NotificationConsumer {
             if (existingIncident.isPresent()) {
                 Incident incident = existingIncident.get();
 
-                IncidentNotificationTrace notificationTrace = new IncidentNotificationTrace();
-                notificationTrace.setIncident(incident);
-                notificationTrace.setChannel(NotificationChannel.EMAIL);
-                notificationTrace.setStatus(DeliveryStatus.FAILED);
-                notificationTrace.setTargetChannelName(event.getDestination());
-                incidentNotificationTraceRepository.save(notificationTrace);
+                boolean alreadyLogged = activityRepository.existsByIncidentAndTypeAndTitle(
+                        incident, ActivityType.ESCALATION, "Recovery Alert Dispatched (Failed)"
+                );
+
+                if (!alreadyLogged) {
+                    activityLogService.logActivity(
+                            incident,
+                            ActivityType.ESCALATION,
+                            "Recovery Alert Dispatched (Failed)",
+                            "Recovery and service restoration notifications was not successfully dispatched to destination: " + event.getDestination()
+                    );
+
+                }
+
+                updateNotificationTrace(incident, NotificationChannel.EMAIL, event.getDestination(), DeliveryStatus.FAILED);
+
+
             }
 
             throw e;
@@ -236,4 +251,20 @@ public class NotificationConsumer {
         }
     }
 
+    private void updateNotificationTrace(Incident incident, NotificationChannel channel, String target, DeliveryStatus status) {
+        IncidentNotificationTrace notificationTrace = incidentNotificationTraceRepository
+                .findByIncidentAndChannelAndTargetChannelName(incident, channel, target)
+                .orElseGet(() -> {
+                            IncidentNotificationTrace newTrace = new IncidentNotificationTrace();
+                            newTrace.setIncident(incident);
+                            newTrace.setChannel(NotificationChannel.EMAIL);
+                            newTrace.setTargetChannelName(target);
+
+                            return newTrace;
+                        }
+                );
+        notificationTrace.setStatus(status);
+        incidentNotificationTraceRepository.save(notificationTrace);
+
+    }
 }
