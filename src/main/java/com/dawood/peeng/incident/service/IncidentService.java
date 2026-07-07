@@ -168,6 +168,6 @@ public class IncidentService {
 
     }
 
-    public IncidentOverview()
+//    public IncidentOverview()
 
 }

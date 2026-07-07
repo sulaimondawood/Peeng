@@ -2,15 +2,19 @@ package com.dawood.peeng.messaging.consumers;
 
 import com.dawood.peeng.configs.RabbitMQConfig;
 import com.dawood.peeng.incident.enums.ActivityType;
+import com.dawood.peeng.incident.enums.DeliveryStatus;
 import com.dawood.peeng.incident.enums.IncidentStatus;
 import com.dawood.peeng.incident.models.Incident;
 import com.dawood.peeng.incident.models.IncidentActivity;
+import com.dawood.peeng.incident.models.IncidentNotificationTrace;
 import com.dawood.peeng.incident.repository.IncidentActivityRepository;
+import com.dawood.peeng.incident.repository.IncidentNotificationTraceRepository;
 import com.dawood.peeng.incident.repository.IncidentRepository;
 import com.dawood.peeng.incident.service.IncidentActivityLogService;
 import com.dawood.peeng.incident.service.IncidentService;
 import com.dawood.peeng.messaging.events.IncidentEvent;
 import com.dawood.peeng.messaging.mails.EmailService;
+import com.dawood.peeng.notification.enums.NotificationChannel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -23,6 +27,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +38,7 @@ public class NotificationConsumer {
     private final EmailService emailService;
     private final IncidentRepository incidentRepository;
     private final IncidentActivityLogService activityLogService;
+    private final IncidentNotificationTraceRepository incidentNotificationTraceRepository;
 
     @Value("${app.client-url}")
     private String clientUrl;
@@ -64,21 +70,47 @@ public class NotificationConsumer {
                 event.getStatusCode()
         );
 
+        Optional<Incident> existingIncident = incidentRepository.findById(
+                event.getIncidentId());
+
         try {
             String body = templateEngine.process("incident-opened", ctx);
             emailService.send(event.getDestination(), subject, body);
             log.info("Successfully sent incident email notification to {}", event.getDestination());
 
-            incidentRepository.findById(
-                    event.getIncidentId()).ifPresent(existingIncident -> activityLogService.logActivity(
-                    existingIncident,
-                    ActivityType.ESCALATION,
-                    "Alert Dispatched",
-                    "Outage notifications successfully dispatched to channel: " + event.getDestination()
-            ));
+            if (existingIncident.isPresent()) {
+                Incident incident = existingIncident.get();
+
+                activityLogService.logActivity(
+                        incident,
+                        ActivityType.ESCALATION,
+                        "Alert Dispatched",
+                        "Outage notifications successfully dispatched to channel: " + event.getDestination()
+                );
+
+                IncidentNotificationTrace notificationTrace = new IncidentNotificationTrace();
+                notificationTrace.setIncident(incident);
+                notificationTrace.setChannel(NotificationChannel.EMAIL);
+                notificationTrace.setStatus(DeliveryStatus.DELIVERED);
+                notificationTrace.setTargetChannelName(event.getDestination());
+                incidentNotificationTraceRepository.save(notificationTrace);
+            }
+
 
         } catch (Exception e) {
-            log.error("Failed to process or send email notification for incident ID: #{}", event.getIncidentId(), e);
+            log.error("Failed to process or send email notification for incident ID: {}", event.getIncidentId(), e);
+
+            if (existingIncident.isPresent()) {
+                Incident incident = existingIncident.get();
+
+                IncidentNotificationTrace notificationTrace = new IncidentNotificationTrace();
+                notificationTrace.setIncident(incident);
+                notificationTrace.setChannel(NotificationChannel.EMAIL);
+                notificationTrace.setStatus(DeliveryStatus.FAILED);
+                notificationTrace.setTargetChannelName(event.getDestination());
+                incidentNotificationTraceRepository.save(notificationTrace);
+            }
+
             throw e;
         }
 
@@ -111,21 +143,48 @@ public class NotificationConsumer {
                 event.getMonitorName()
         );
 
+        Optional<Incident> existingIncident = incidentRepository.findById(
+                event.getIncidentId());
+
         try {
             String body = templateEngine.process("incident-resolved", ctx);
             emailService.send(event.getDestination(), subject, body);
             log.info("Successfully sent incident recovery email notification to {}", event.getDestination());
 
-            incidentRepository.findById(
-                    event.getIncidentId()).ifPresent(existingIncident -> activityLogService.logActivity(
-                    existingIncident,
-                    ActivityType.ESCALATION,
-                    "Recovery Alert Dispatched",
-                    "Recovery and service restoration notifications successfully dispatched to destination: " + event.getDestination()
-            ));
+
+            if (existingIncident.isPresent()) {
+                Incident incident = existingIncident.get();
+
+                activityLogService.logActivity(
+                        incident,
+                        ActivityType.ESCALATION,
+                        "Recovery Alert Dispatched",
+                        "Recovery and service restoration notifications successfully dispatched to destination: " + event.getDestination()
+                );
+
+                IncidentNotificationTrace notificationTrace = new IncidentNotificationTrace();
+                notificationTrace.setIncident(incident);
+                notificationTrace.setChannel(NotificationChannel.EMAIL);
+                notificationTrace.setStatus(DeliveryStatus.DELIVERED);
+                notificationTrace.setTargetChannelName(event.getDestination());
+                incidentNotificationTraceRepository.save(notificationTrace);
+            }
+
 
         } catch (Exception e) {
             log.error("Failed to process or send email notification for incident ID: #{}", event.getIncidentId(), e);
+
+            if (existingIncident.isPresent()) {
+                Incident incident = existingIncident.get();
+
+                IncidentNotificationTrace notificationTrace = new IncidentNotificationTrace();
+                notificationTrace.setIncident(incident);
+                notificationTrace.setChannel(NotificationChannel.EMAIL);
+                notificationTrace.setStatus(DeliveryStatus.FAILED);
+                notificationTrace.setTargetChannelName(event.getDestination());
+                incidentNotificationTraceRepository.save(notificationTrace);
+            }
+
             throw e;
         }
 
