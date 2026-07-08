@@ -1,6 +1,9 @@
 package com.dawood.peeng.incident.service;
 
 import com.dawood.peeng.common.enums.ErrorCode;
+import com.dawood.peeng.identity.exceptions.UserNotFoundException;
+import com.dawood.peeng.identity.models.User;
+import com.dawood.peeng.identity.repository.UserRepository;
 import com.dawood.peeng.incident.dto.request.IncidentFilterRequest;
 import com.dawood.peeng.incident.dto.response.CheckResult;
 import com.dawood.peeng.incident.dto.response.IncidentDTO;
@@ -12,7 +15,10 @@ import com.dawood.peeng.incident.enums.Severity;
 import com.dawood.peeng.incident.exceptions.IncidentNotFoundException;
 import com.dawood.peeng.incident.mapper.IncidentMapper;
 import com.dawood.peeng.incident.models.Incident;
+import com.dawood.peeng.incident.models.IncidentDiagnosticTrace;
+import com.dawood.peeng.incident.repository.IncidentDiagnosticRepository;
 import com.dawood.peeng.incident.repository.IncidentRepository;
+import com.dawood.peeng.membership.models.Membership;
 import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.monitor.service.MonitorService;
 import com.dawood.peeng.tenant.context.TenantContext;
@@ -21,7 +27,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -36,6 +46,9 @@ public class IncidentService {
     private final IncidentRepository incidentRepository;
     private final MonitorService monitorService;
     private final IncidentActivityLogService incidentActivityLogService;
+    private final RestClient.Builder restBuilder;
+    private final UserRepository userRepository;
+    private final IncidentDiagnosticRepository incidentDiagnosticRepository;
 
 
     public Incident openIncident(Monitor monitor, CheckResult result) {
@@ -183,4 +196,102 @@ public class IncidentService {
 
     }
 
+    public IncidentDiagnosticTrace executeManualManualHandshake(UUID incidentId) {
+
+        UUID tenantId = TenantContext.getTenantId();
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
+
+        Incident incident = incidentRepository.findByIdAndTenantId(incidentId, tenantId)
+                .orElseThrow(() -> new IncidentNotFoundException(
+                        "Incident not found",
+                        HttpStatus.NOT_FOUND,
+                        ErrorCode.NOT_FOUND));
+
+        Monitor scheduledMonitor = incident.getMonitor();
+
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofSeconds(scheduledMonitor.getTimeoutInSeconds()));
+        factory.setReadTimeout(Duration.ofSeconds(scheduledMonitor.getTimeoutInSeconds()));
+
+        long startTIme = 0L;
+        long responseTimeMs = 0L;
+        ResponseEntity<Void> response = null;
+        try {
+
+            startTIme = System.currentTimeMillis();
+            response = restBuilder.requestFactory(factory)
+                    .build()
+                    .get()
+                    .uri(scheduledMonitor.getUrl())
+                    .retrieve()
+                    .toBodilessEntity();
+
+            responseTimeMs = System.currentTimeMillis() - startTIme;
+
+            IncidentDiagnosticTrace diagnosticTrace = new IncidentDiagnosticTrace();
+            diagnosticTrace.setIncident(incident);
+            diagnosticTrace.setTriggeredBy(user);
+            diagnosticTrace.setStatusCode(response.getStatusCode().value());
+            diagnosticTrace.setResponseTimeMs(responseTimeMs);
+            diagnosticTrace.setSuccessful(true);
+            diagnosticTrace.setMessage("Handshake completed safely from primary hub node.");
+            incidentDiagnosticRepository.save(diagnosticTrace);
+
+            incidentActivityLogService.logActivity(
+                    incident,
+                    ActivityType.DIAGNOSTIC,
+                    "Diagnostic Closure Handshake",
+                    "All verification handshakes succeeded. Performance baseline returned to stable. Monitoring triggers calibrated for active surveilance. Automated incident trace successfully archived"
+            );
+
+            return diagnosticTrace;
+
+        } catch (Exception ex) {
+            responseTimeMs = System.currentTimeMillis() - startTIme;
+            int code = (response != null) ? response.getStatusCode().value() : 0;
+
+            IncidentDiagnosticTrace diagnosticTrace = new IncidentDiagnosticTrace();
+            diagnosticTrace.setIncident(incident);
+            diagnosticTrace.setTriggeredBy(user);
+            diagnosticTrace.setStatusCode(code);
+            diagnosticTrace.setResponseTimeMs(responseTimeMs);
+            diagnosticTrace.setSuccessful(false);
+            diagnosticTrace.setMessage("Trace failed: " + ex.getMessage());
+            incidentDiagnosticRepository.save(diagnosticTrace);
+
+            incidentActivityLogService.logActivity(
+                    incident,
+                    ActivityType.DIAGNOSTIC,
+                    "Diagnostic Closure Handshake",
+                    "All verification handshakes failed. Performance baseline returned to unstable. Automated incident trace successfully archived"
+            );
+
+            return diagnosticTrace;
+        }
+
+
+    }
+
+    public void assignTeamMemberToIncident(UUID incidentId){
+
+        UUID tenantId = TenantContext.getTenantId();
+
+        Incident incident = incidentRepository.findByIdAndTenantId(incidentId, tenantId)
+                .orElseThrow(() -> new IncidentNotFoundException(
+                        "Incident not found",
+                        HttpStatus.NOT_FOUND,
+                        ErrorCode.NOT_FOUND));
+
+        List<Membership> members = incident.getTenant().getMemberships();
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
+
+
+    }
 }

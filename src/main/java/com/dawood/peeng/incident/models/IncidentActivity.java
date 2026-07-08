@@ -1,5 +1,6 @@
 package com.dawood.peeng.incident.models;
 
+import com.dawood.peeng.common.models.MetaData;
 import com.dawood.peeng.incident.enums.ActivityType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -14,7 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class IncidentActivity {
+public class IncidentActivity extends MetaData {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;

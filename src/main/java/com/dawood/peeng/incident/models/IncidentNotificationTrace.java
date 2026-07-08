@@ -1,5 +1,6 @@
 package com.dawood.peeng.incident.models;
 
+import com.dawood.peeng.common.models.MetaData;
 import com.dawood.peeng.incident.enums.DeliveryStatus;
 import com.dawood.peeng.notification.enums.NotificationChannel;
 import jakarta.persistence.*;
@@ -14,7 +15,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class IncidentNotificationTrace {
+public class IncidentNotificationTrace extends MetaData {
 
     @Id
     @GeneratedValue
