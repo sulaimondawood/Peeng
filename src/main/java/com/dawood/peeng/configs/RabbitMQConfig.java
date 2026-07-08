@@ -25,9 +25,13 @@ public class RabbitMQConfig {
     public static final String EMAIL_ROUTING_KEY = "peeng.email.verification";
 
     public static final String INCIDENT_OPENED_QUEUE = "incident.opened.queue";
-    public static final String INCIDENT_CLOSED_QUEUE = "incident.closed.queue";
     public static final String INCIDENT_OPENED_ROUTING_KEY = "incident.opened";
+
+    public static final String INCIDENT_CLOSED_QUEUE = "incident.closed.queue";
     public static final String INCIDENT_CLOSED_ROUTING_KEY = "incident.closed";
+
+    public static final String  INCIDENT_ASSIGNED_TO_QUEUE= "incident.assigned.queue";
+    public static final String INCIDENT_ASSIGNED_TO_MEMBER_ROUTING_KEY="incident.assigned";
 
 
     @Bean
@@ -121,6 +125,22 @@ public class RabbitMQConfig {
                 .with(SCHEDULER_ROUTING_KEY);
 
     }
+
+    @Bean
+    public Queue incidentAssignedQueue(){
+        return QueueBuilder
+                .durable(INCIDENT_ASSIGNED_TO_QUEUE)
+                .deadLetterExchange(DLX_EXCHANGE)
+                .deadLetterRoutingKey(DLX_ROUTING_KEY)
+                .build();
+    }
+
+    public Binding incidentAssignedBinding(TopicExchange topicExchange, Queue incidentAssignedQueue){
+        return BindingBuilder.bind(incidentAssignedQueue)
+                .to(topicExchange)
+                .with(RabbitMQConfig.INCIDENT_ASSIGNED_TO_MEMBER_ROUTING_KEY);
+    }
+
 
     @Bean
     public MessageConverter simpleMessageConverter() {

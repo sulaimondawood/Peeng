@@ -23,6 +23,8 @@ public interface MonitorRepository extends JpaRepository<Monitor, UUID> {
 
   Optional<Monitor> findByIdAndTenantId(UUID uuid, UUID tenantId);
 
+  Optional<Monitor> findByIdAndTenantIdAnd(UUID uuid, UUID tenantId);
+
   @Query("""
     SELECT m FROM Monitor m
     WHERE m.tenant.id = :tenantId
@@ -33,5 +35,6 @@ public interface MonitorRepository extends JpaRepository<Monitor, UUID> {
     )
 """)
   Page<Monitor> findAllMonitors(@Param("tenantId") UUID tenantId, @Param("status") MonitorStatus status, @Param("keyword") String keyword, Pageable pageable);
+
 
 }

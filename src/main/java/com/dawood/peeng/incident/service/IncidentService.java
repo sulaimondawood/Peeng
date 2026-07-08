@@ -1,6 +1,9 @@
 package com.dawood.peeng.incident.service;
 
 import com.dawood.peeng.common.enums.ErrorCode;
+import com.dawood.peeng.common.exceptions.BadRequestException;
+import com.dawood.peeng.identity.enums.RoleType;
+import com.dawood.peeng.identity.exceptions.UnauthorizedException;
 import com.dawood.peeng.identity.exceptions.UserNotFoundException;
 import com.dawood.peeng.identity.models.User;
 import com.dawood.peeng.identity.repository.UserRepository;
@@ -12,17 +15,22 @@ import com.dawood.peeng.incident.enums.ActivityType;
 import com.dawood.peeng.incident.enums.DateRangeBucket;
 import com.dawood.peeng.incident.enums.IncidentStatus;
 import com.dawood.peeng.incident.enums.Severity;
+import com.dawood.peeng.incident.events.IncidentAssignedEvent;
 import com.dawood.peeng.incident.exceptions.IncidentNotFoundException;
 import com.dawood.peeng.incident.mapper.IncidentMapper;
 import com.dawood.peeng.incident.models.Incident;
 import com.dawood.peeng.incident.models.IncidentDiagnosticTrace;
 import com.dawood.peeng.incident.repository.IncidentDiagnosticRepository;
 import com.dawood.peeng.incident.repository.IncidentRepository;
+import com.dawood.peeng.membership.enums.MembershipStatus;
+import com.dawood.peeng.membership.exceptions.MembershipException;
 import com.dawood.peeng.membership.models.Membership;
+import com.dawood.peeng.membership.repository.MembershipRepository;
 import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.monitor.service.MonitorService;
 import com.dawood.peeng.tenant.context.TenantContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -49,6 +57,8 @@ public class IncidentService {
     private final RestClient.Builder restBuilder;
     private final UserRepository userRepository;
     private final IncidentDiagnosticRepository incidentDiagnosticRepository;
+    private final MembershipRepository membershipRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
 
     public Incident openIncident(Monitor monitor, CheckResult result) {
@@ -275,23 +285,69 @@ public class IncidentService {
 
     }
 
-    public void assignTeamMemberToIncident(UUID incidentId){
+    public void assignTeamMemberToIncident(UUID incidentId, UUID memberId) {
 
         UUID tenantId = TenantContext.getTenantId();
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
+        Membership assigner = membershipRepository.findByUser_EmailAndTenant_Id(email, tenantId)
+                .orElseThrow(() -> new UserNotFoundException("User not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
+
+        Membership assignee = membershipRepository.findByIdAndTenantId(memberId, tenantId)
+                .orElseThrow(() -> new MembershipException("Target member not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
+
+        boolean isPrivileged = assigner.getRole() == RoleType.ADMIN || assigner.getRole() == RoleType.OWNER;
+
+        if (!isPrivileged) {
+            if ((assigner.getId() == assignee.getId()) && assignee.getStatus() == MembershipStatus.ACTIVE) {
+                assignTeamMember(tenantId, incidentId, assignee, assigner);
+                return;
+            }
+            throw new UnauthorizedException(
+                    "You're not authorized to assign member to incident",
+                    HttpStatus.UNAUTHORIZED,
+                    ErrorCode.UNAUTHORIZED
+            );
+        }
+        assignTeamMember(tenantId, incidentId, assignee, assigner);
+
+    }
+
+    private void assignTeamMember(UUID tenantId, UUID incidentId, Membership assignee, Membership assigner) {
         Incident incident = incidentRepository.findByIdAndTenantId(incidentId, tenantId)
                 .orElseThrow(() -> new IncidentNotFoundException(
                         "Incident not found",
                         HttpStatus.NOT_FOUND,
                         ErrorCode.NOT_FOUND));
 
-        List<Membership> members = incident.getTenant().getMemberships();
+        if (incident.getStatus() != IncidentStatus.RESOLVED) {
+            incident.setAcknowledgedAt(LocalDateTime.now());
+            incident.setAcknowledged(true);
+            incident.setAcknowledgedBy(assignee.getUser());
 
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            String assigneeName = assignee.getUser().getName();
+            String assignerName = assigner.getUser().getName();
+            String assigneeEmail = assignee.getUser().getEmail();
 
-        User user = userRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
+            String message = String.format("Incident assigned to %s by %s", assigneeName, assignerName);
 
+            incidentActivityLogService.logActivity(
+                    incident,
+                    ActivityType.ACKNOWLEDGEMENT,
+                    "On-Call Assignment Calibrated",
+                    message);
 
+            applicationEventPublisher.publishEvent(new IncidentAssignedEvent(
+                    incident.getId(),
+                    incident.getMonitor().getId(),
+                    tenantId,
+                    assignerName,
+                    assigneeName,
+                    assigneeEmail
+            ));
+
+        } else {
+            throw new BadRequestException("Cannot assign closed incidents", HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
+        }
     }
 }

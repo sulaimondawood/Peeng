@@ -13,4 +13,5 @@ public interface IncidentActivityRepository extends JpaRepository<IncidentActivi
     Optional<IncidentActivity> findByIncidentId(UUID incidentId);
 
     boolean existsByIncidentAndTypeAndTitle(Incident incident, ActivityType type, String messageSnippet);
+
 }

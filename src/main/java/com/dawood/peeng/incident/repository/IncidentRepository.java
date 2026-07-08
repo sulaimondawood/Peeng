@@ -49,4 +49,6 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
             Pageable pageable);
 
     Optional<Incident> findByIdAndTenantId(UUID incidentId, UUID tenantId);
+
+    Optional<Incident> findByIdAndTenantIdAndMonitorId(UUID incidentId, UUID tenantId, UUID monitorId);
 }
