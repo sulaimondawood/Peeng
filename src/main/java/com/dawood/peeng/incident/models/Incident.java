@@ -1,6 +1,7 @@
 package com.dawood.peeng.incident.models;
 
 import com.dawood.peeng.common.models.MetaData;
+import com.dawood.peeng.identity.models.User;
 import com.dawood.peeng.incident.enums.IncidentStatus;
 import com.dawood.peeng.incident.enums.Severity;
 import com.dawood.peeng.monitor.models.Monitor;
@@ -9,6 +10,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -62,11 +65,15 @@ public class Incident extends MetaData {
 
     private LocalDateTime acknowledgedAt;
 
-    private UUID acknowledgedByUserId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User acknowledgedBy;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Severity severity;
+
+    @OneToMany(mappedBy = "incident")
+    private List<IncidentNotificationTrace> notificationTrace = new ArrayList<>();
 
 //    Further updates
 //    @Column(columnDefinition = "TEXT")

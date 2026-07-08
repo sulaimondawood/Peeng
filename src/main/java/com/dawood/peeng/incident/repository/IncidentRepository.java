@@ -47,4 +47,6 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
            @Param("from") LocalDateTime from,
            @Param("to") LocalDateTime to,
             Pageable pageable);
+
+    Optional<Incident> findByIdAndTenantId(UUID incidentId, UUID tenantId);
 }

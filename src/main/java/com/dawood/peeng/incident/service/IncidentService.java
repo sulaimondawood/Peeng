@@ -4,6 +4,7 @@ import com.dawood.peeng.common.enums.ErrorCode;
 import com.dawood.peeng.incident.dto.request.IncidentFilterRequest;
 import com.dawood.peeng.incident.dto.response.CheckResult;
 import com.dawood.peeng.incident.dto.response.IncidentDTO;
+import com.dawood.peeng.incident.dto.response.IncidentOverview;
 import com.dawood.peeng.incident.enums.ActivityType;
 import com.dawood.peeng.incident.enums.DateRangeBucket;
 import com.dawood.peeng.incident.enums.IncidentStatus;
@@ -168,6 +169,18 @@ public class IncidentService {
 
     }
 
-//    public IncidentOverview()
+    public IncidentOverview getIncidentDetails(UUID incidentId) {
+
+        UUID tenantId = TenantContext.getTenantId();
+
+        Incident incident = incidentRepository.findByIdAndTenantId(incidentId, tenantId)
+                .orElseThrow(() -> new IncidentNotFoundException(
+                        "Incident not found",
+                        HttpStatus.NOT_FOUND,
+                        ErrorCode.NOT_FOUND));
+
+        return IncidentMapper.toIncidentOverview(incident);
+
+    }
 
 }

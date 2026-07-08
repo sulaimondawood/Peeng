@@ -4,18 +4,18 @@ import com.dawood.peeng.monitor.dtos.responses.MonitorResponseDTO;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
 public class IncidentOverview {
 
-   private LocalDateTime outageDuration;
+   private Long outageDuration;
 
    private MonitorResponseDTO monitor;
 
    private String assignedTo;
 
-//   private
+   private List<IncidentNotificationTraceDTO> notificationTrace;
 
 }

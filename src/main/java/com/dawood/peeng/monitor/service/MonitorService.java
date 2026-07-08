@@ -195,7 +195,7 @@ public class MonitorService {
                     incident.setResolvedAt(LocalDateTime.now());
                     incident.setAcknowledged(true);
                     incident.setAcknowledgedAt(LocalDateTime.now());
-                    incident.setAcknowledgedByUserId(currentUser.getId());
+                    incident.setAcknowledgedBy(currentUser);
 
                     incidentRepository.save(incident);
                 });
