@@ -293,13 +293,13 @@ public class IncidentService {
         Membership assigner = membershipRepository.findByUser_EmailAndTenant_Id(email, tenantId)
                 .orElseThrow(() -> new UserNotFoundException("User not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
 
-        Membership assignee = membershipRepository.findByIdAndTenantId(memberId, tenantId)
+        Membership assignee = membershipRepository.findByIdAndTenantIdAndMembershipStatus(memberId, tenantId, MembershipStatus.ACTIVE)
                 .orElseThrow(() -> new MembershipException("Target member not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
 
         boolean isPrivileged = assigner.getRole() == RoleType.ADMIN || assigner.getRole() == RoleType.OWNER;
 
         if (!isPrivileged) {
-            if ((assigner.getId() == assignee.getId()) && assignee.getStatus() == MembershipStatus.ACTIVE) {
+            if ((assigner.getId() == assignee.getId())) {
                 assignTeamMember(tenantId, incidentId, assignee, assigner);
                 return;
             }

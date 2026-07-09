@@ -2,8 +2,6 @@ package com.dawood.peeng.incident.controllers;
 
 import com.dawood.peeng.common.dto.ApiResponse;
 import com.dawood.peeng.common.dto.Meta;
-import com.dawood.peeng.common.enums.ErrorCode;
-import com.dawood.peeng.common.exceptions.BadRequestException;
 import com.dawood.peeng.incident.dto.request.IncidentAssignmentRequest;
 import com.dawood.peeng.incident.dto.request.IncidentFilterRequest;
 import com.dawood.peeng.incident.dto.response.IncidentDTO;
@@ -12,18 +10,15 @@ import com.dawood.peeng.incident.mapper.IncidentMapper;
 import com.dawood.peeng.incident.models.Incident;
 import com.dawood.peeng.incident.models.IncidentDiagnosticTrace;
 import com.dawood.peeng.incident.service.IncidentService;
-import com.dawood.peeng.monitor.dtos.responses.MonitorCheckDTO;
-import com.dawood.peeng.monitor.mapper.MonitorCheckMapper;
+import com.dawood.peeng.membership.dtos.responses.MembershipResponseDTO;
+import com.dawood.peeng.membership.service.MembershipService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -32,6 +27,7 @@ import java.util.UUID;
 public class IncidentController {
 
     private final IncidentService incidentService;
+private final MembershipService membershipService;
 
     @GetMapping("/opened")
     public ResponseEntity<ApiResponse<List<IncidentDTO>>> getActiveIncident() {
@@ -84,6 +80,13 @@ public class IncidentController {
         incidentService.assignTeamMemberToIncident(incidentId, request.memberId());
         return ResponseEntity.ok()
                 .body(ApiResponse.success("Request successful", null));
+
+    }
+
+    @PostMapping("/members")
+    public ResponseEntity<ApiResponse<List<MembershipResponseDTO>>> getTeamMembers() {
+        return ResponseEntity.ok()
+                .body(ApiResponse.success("Request successful", membershipService.getAllMembersByTenant()));
 
     }
 
