@@ -2,21 +2,28 @@ package com.dawood.peeng.incident.controllers;
 
 import com.dawood.peeng.common.dto.ApiResponse;
 import com.dawood.peeng.common.dto.Meta;
+import com.dawood.peeng.common.enums.ErrorCode;
+import com.dawood.peeng.common.exceptions.BadRequestException;
+import com.dawood.peeng.incident.dto.request.IncidentAssignmentRequest;
 import com.dawood.peeng.incident.dto.request.IncidentFilterRequest;
 import com.dawood.peeng.incident.dto.response.IncidentDTO;
+import com.dawood.peeng.incident.dto.response.IncidentOverview;
 import com.dawood.peeng.incident.mapper.IncidentMapper;
 import com.dawood.peeng.incident.models.Incident;
+import com.dawood.peeng.incident.models.IncidentDiagnosticTrace;
 import com.dawood.peeng.incident.service.IncidentService;
 import com.dawood.peeng.monitor.dtos.responses.MonitorCheckDTO;
 import com.dawood.peeng.monitor.mapper.MonitorCheckMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -27,7 +34,7 @@ public class IncidentController {
     private final IncidentService incidentService;
 
     @GetMapping("/opened")
-    public ResponseEntity<ApiResponse<List<IncidentDTO>>> getActiveIncident(){
+    public ResponseEntity<ApiResponse<List<IncidentDTO>>> getActiveIncident() {
 
         return ResponseEntity.ok().body(ApiResponse.success("Opened incidents fetched successfully", incidentService.getActiveIncidents()));
 
@@ -36,7 +43,7 @@ public class IncidentController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<IncidentDTO>>> getAllIncidentS(
             @Valid IncidentFilterRequest request
-            ){
+    ) {
 
         Page<Incident> pagedIncident = incidentService.getAllIncidents(request);
 
@@ -51,8 +58,34 @@ public class IncidentController {
                 .map(IncidentMapper::toDTO)
                 .toList();
 
-        return ResponseEntity.ok().body(ApiResponse.success("All incidents fetched successfully",incidents,meta ));
+        return ResponseEntity.ok().body(ApiResponse.success("All incidents fetched successfully", incidents, meta));
 
     }
+
+    @GetMapping("/{incidentId}")
+    public ResponseEntity<ApiResponse<IncidentOverview>> getIncidentOverview(@PathVariable("incidentId") UUID incidentId) {
+        return ResponseEntity.ok()
+                .body(ApiResponse.success("Request successful", incidentService.getIncidentDetails(incidentId)));
+
+    }
+
+    @PostMapping("/{incidentId}/trace")
+    public ResponseEntity<ApiResponse<IncidentDiagnosticTrace>> traceManualDiagnostic(@PathVariable("incidentId") UUID incidentId) {
+        return ResponseEntity.ok()
+                .body(ApiResponse.success("Request successful", incidentService.executeManualManualHandshake(incidentId)));
+
+    }
+
+    @PostMapping("/{incidentId}/assign")
+    public ResponseEntity<ApiResponse<Void>> assignToMember(
+            @PathVariable("incidentId") UUID incidentId,
+            @RequestBody @Valid IncidentAssignmentRequest request) {
+
+        incidentService.assignTeamMemberToIncident(incidentId, request.memberId());
+        return ResponseEntity.ok()
+                .body(ApiResponse.success("Request successful", null));
+
+    }
+
 
 }
