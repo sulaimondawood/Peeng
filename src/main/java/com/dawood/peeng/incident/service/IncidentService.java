@@ -293,7 +293,7 @@ public class IncidentService {
         Membership assigner = membershipRepository.findByUser_EmailAndTenant_Id(email, tenantId)
                 .orElseThrow(() -> new UserNotFoundException("User not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
 
-        Membership assignee = membershipRepository.findByIdAndTenantIdAndMembershipStatus(memberId, tenantId, MembershipStatus.ACTIVE)
+        Membership assignee = membershipRepository.findByIdAndTenantIdAndStatus(memberId, tenantId, MembershipStatus.ACTIVE)
                 .orElseThrow(() -> new MembershipException("Target member not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
 
         boolean isPrivileged = assigner.getRole() == RoleType.ADMIN || assigner.getRole() == RoleType.OWNER;

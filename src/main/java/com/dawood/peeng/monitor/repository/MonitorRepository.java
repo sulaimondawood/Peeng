@@ -21,9 +21,8 @@ public interface MonitorRepository extends JpaRepository<Monitor, UUID> {
 
   List<Monitor> findAllByLifecycleAndNextCheckAtLessThanEqual(MonitorLifecycleStatus status, LocalDateTime time);
 
-  Optional<Monitor> findByIdAndTenantId(UUID uuid, UUID tenantId);
+  Optional<Monitor> findByIdAndTenantId(UUID monitorId, UUID tenantId);
 
-  Optional<Monitor> findByIdAndTenantIdAnd(UUID uuid, UUID tenantId);
 
   @Query("""
     SELECT m FROM Monitor m

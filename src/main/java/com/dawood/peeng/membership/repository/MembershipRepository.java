@@ -20,7 +20,7 @@ public interface MembershipRepository extends JpaRepository<Membership, UUID> {
 
   List<Membership> findAllByUser_Id(UUID userId);
 
-  Optional<Membership> findByIdAndTenantIdAndMembershipStatus(UUID memberId, UUID tenantId, MembershipStatus status);
+  Optional<Membership> findByIdAndTenantIdAndStatus(UUID memberId, UUID tenantId, MembershipStatus status);
 
-  Optional<Membership> findByTenantIdAndMembershipStatus(UUID tenantId, MembershipStatus status);
+  Optional<Membership> findByTenantIdAndStatus(UUID tenantId, MembershipStatus status);
 }
