@@ -5,6 +5,7 @@ import com.dawood.peeng.messaging.events.IncidentEvent;
 import com.dawood.peeng.messaging.producers.NotificationProducer;
 import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.notification.model.NotificationChannelConfig;
+import com.dawood.peeng.tenant.context.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Year;
 import java.util.Optional;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Service
@@ -27,6 +29,8 @@ public class EmailNotificationProvider implements NotificationProvider {
     @Override
     public void sendDownAlert(Incident incident, NotificationChannelConfig config) {
 
+        UUID tenantId = TenantContext.getTenantId();
+
         Monitor monitor = incident.getMonitor();
 
         IncidentEvent event = IncidentEvent.builder()
@@ -34,6 +38,7 @@ public class EmailNotificationProvider implements NotificationProvider {
                 .monitorName(monitor.getName())
                 .monitorUrl(monitor.getUrl())
                 .monitorId(monitor.getId())
+                .tenantId(tenantId)
                 .incidentId(incident.getId())
                 .statusCode(incident.getInitialStatusCode())
                 .responseTimeMS(incident.getInitialResponseTimeMs())
@@ -54,12 +59,15 @@ public class EmailNotificationProvider implements NotificationProvider {
     public void sendRecoveryAlert(Incident incident, NotificationChannelConfig config) {
 
         Monitor monitor = incident.getMonitor();
+        UUID tenantId = TenantContext.getTenantId();
+
 
         IncidentEvent event = IncidentEvent.builder()
                 .workspaceName(incident.getTenant().getWorkspaceName())
                 .monitorName(monitor.getName())
                 .monitorUrl(monitor.getUrl())
                 .incidentId(incident.getId())
+                .tenantId(tenantId)
                 .statusCode(incident.getInitialStatusCode())
                 .responseTimeMS(incident.getInitialResponseTimeMs())
                 .failureCount(incident.getFailureCount())

@@ -20,6 +20,8 @@ public class IncidentEvent {
 
     private UUID incidentId;
 
+    private UUID tenantId;
+
     private Integer statusCode;
 
     private Long responseTimeMS;

@@ -59,7 +59,7 @@ public class MonitorCheckService {
                 .successful(true)
                 .statusCode(statusCode)
                 .responseTimeMs(responseTime)
-                .checkedAt(LocalDateTime.now())
+                .checkedAt(now)
                 .build();
 
         monitorCheckRepository.save(monitorCheck);
@@ -78,8 +78,8 @@ public class MonitorCheckService {
                 monitor.getConsecutiveSuccesses() + 1);
         monitor.setLatestStatusCode(statusCode);
         monitor.setLatestResponseTimeMs(responseTime);
-        monitor.setLastCheckedAt(LocalDateTime.now());
-        monitor.setLastSuccessfulCheckAt(LocalDateTime.now());
+        monitor.setLastCheckedAt(now);
+        monitor.setLastSuccessfulCheckAt(now);
         monitor.setLatestErrorMessage(null);
 
 
@@ -90,7 +90,7 @@ public class MonitorCheckService {
             boolean wasIncidentOpen = monitor.isIncidentOpen();
 
             monitor.setStatus(MonitorStatus.UP);
-            monitor.setLastStatusChangeAt(LocalDateTime.now());
+            monitor.setLastStatusChangeAt(now);
             monitor.setIncidentOpen(false);
 
             Incident resolvedIncident = null;
@@ -139,7 +139,7 @@ public class MonitorCheckService {
                 .statusCode(statusCode)
                 .responseTimeMs(responseTime)
                 .errorMessage(result.message())
-                .checkedAt(LocalDateTime.now())
+                .checkedAt(now)
                 .build();
 
         monitorCheckRepository.save(monitorCheck);
@@ -151,7 +151,7 @@ public class MonitorCheckService {
                 0);
         monitor.setLatestStatusCode(statusCode);
         monitor.setLatestResponseTimeMs(responseTime);
-        monitor.setLastCheckedAt(LocalDateTime.now());
+        monitor.setLastCheckedAt(now);
         monitor.setLatestErrorMessage(result.isHighLatency() && result.message() == null ?
                 String.format("High latency detected: Response took %.2f secs", responseTime / 1000.0) :
                 result.message()
@@ -164,7 +164,7 @@ public class MonitorCheckService {
 
                 monitor.setStatus(MonitorStatus.DOWN);
                 monitor.setLastStatusChangeAt(
-                        LocalDateTime.now());
+                       now);
                 monitor.setIncidentOpen(true);
 
                 monitorRepository.save(monitor);

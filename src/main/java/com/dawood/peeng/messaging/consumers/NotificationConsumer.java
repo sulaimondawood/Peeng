@@ -50,6 +50,9 @@ public class NotificationConsumer {
 
     @RabbitListener(queues = RabbitMQConfig.INCIDENT_OPENED_QUEUE)
     public void consumeIncidentOpenedNotification(IncidentEvent event) {
+
+        UUID tenantId = event.getTenantId();
+
         Context ctx = new Context();
 
         Map<String, Object> variables = new HashMap<>();
@@ -84,6 +87,7 @@ public class NotificationConsumer {
                 Incident incident = existingIncident.get();
 
                 activityLogService.logActivity(
+                        tenantId,
                         incident,
                         ActivityType.ESCALATION,
                         "Alert Dispatched",
@@ -107,6 +111,7 @@ public class NotificationConsumer {
 
                 if (!alreadyLogged) {
                     activityLogService.logActivity(
+                            tenantId,
                             incident,
                             ActivityType.ESCALATION,
                             "Alert Dispatched (Failed)",
@@ -126,6 +131,7 @@ public class NotificationConsumer {
 
     @RabbitListener(queues = RabbitMQConfig.INCIDENT_CLOSED_QUEUE)
     public void consumeIncidentResolvedNotification(IncidentEvent event) {
+        UUID tenantId = event.getTenantId();
         Context ctx = new Context();
 
         String formattedStart = formatEventTimestamp(event.getStartedAt());
@@ -164,6 +170,7 @@ public class NotificationConsumer {
                 Incident incident = existingIncident.get();
 
                 activityLogService.logActivity(
+                        tenantId,
                         incident,
                         ActivityType.ESCALATION,
                         "Recovery Alert Dispatched",
@@ -187,6 +194,7 @@ public class NotificationConsumer {
 
                 if (!alreadyLogged) {
                     activityLogService.logActivity(
+                            tenantId,
                             incident,
                             ActivityType.ESCALATION,
                             "Recovery Alert Dispatched (Failed)",

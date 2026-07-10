@@ -8,9 +8,7 @@ import com.dawood.peeng.identity.exceptions.UserNotFoundException;
 import com.dawood.peeng.identity.models.User;
 import com.dawood.peeng.identity.repository.UserRepository;
 import com.dawood.peeng.incident.dto.request.IncidentFilterRequest;
-import com.dawood.peeng.incident.dto.response.CheckResult;
-import com.dawood.peeng.incident.dto.response.IncidentDTO;
-import com.dawood.peeng.incident.dto.response.IncidentOverview;
+import com.dawood.peeng.incident.dto.response.*;
 import com.dawood.peeng.incident.enums.ActivityType;
 import com.dawood.peeng.incident.enums.DateRangeBucket;
 import com.dawood.peeng.incident.enums.IncidentStatus;
@@ -20,6 +18,7 @@ import com.dawood.peeng.incident.exceptions.IncidentNotFoundException;
 import com.dawood.peeng.incident.mapper.IncidentMapper;
 import com.dawood.peeng.incident.models.Incident;
 import com.dawood.peeng.incident.models.IncidentDiagnosticTrace;
+import com.dawood.peeng.incident.repository.IncidentActivityRepository;
 import com.dawood.peeng.incident.repository.IncidentDiagnosticRepository;
 import com.dawood.peeng.incident.repository.IncidentRepository;
 import com.dawood.peeng.membership.enums.MembershipStatus;
@@ -59,9 +58,12 @@ public class IncidentService {
     private final IncidentDiagnosticRepository incidentDiagnosticRepository;
     private final MembershipRepository membershipRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final IncidentActivityRepository incidentActivityRepository;
 
 
     public Incident openIncident(Monitor monitor, CheckResult result) {
+
+        UUID tenantId = monitor.getTenant().getId();
 
         Optional<Incident> existingIncident =
                 incidentRepository.findByMonitor_IdAndStatus(
@@ -99,9 +101,10 @@ public class IncidentService {
                 .acknowledged(false)
                 .build();
 
-        Incident savedIncident = incidentRepository.save(newIncident);
+        Incident savedIncident = incidentRepository.saveAndFlush(newIncident);
 
         incidentActivityLogService.logActivity(
+                tenantId,
                 savedIncident,
                 activityType,
                 "Incident threshold triggered",
@@ -114,6 +117,9 @@ public class IncidentService {
 
     public Incident resolveIncident(Monitor monitor) {
         LocalDateTime now = LocalDateTime.now();
+
+        UUID tenantId = monitor.getTenant().getId();
+
 
         Incident incident =
                 incidentRepository
@@ -138,9 +144,10 @@ public class IncidentService {
         );
         incident.setResolvedResponseTimeMs(monitor.getLatestResponseTimeMs());
 
-        Incident savedIncident = incidentRepository.save(incident);
+        Incident savedIncident = incidentRepository.saveAndFlush(incident);
 
         incidentActivityLogService.logActivity(
+                tenantId,
                 savedIncident,
                 ActivityType.RECOVERY,
                 "Incident threshold triggered",
@@ -206,7 +213,7 @@ public class IncidentService {
 
     }
 
-    public IncidentDiagnosticTrace executeManualManualHandshake(UUID incidentId) {
+    public IncidentDiagnosticTraceDTO executeManualManualHandshake(UUID incidentId) {
 
         UUID tenantId = TenantContext.getTenantId();
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -251,13 +258,19 @@ public class IncidentService {
             incidentDiagnosticRepository.save(diagnosticTrace);
 
             incidentActivityLogService.logActivity(
+                    tenantId,
                     incident,
                     ActivityType.DIAGNOSTIC,
                     "Diagnostic Closure Handshake",
                     "All verification handshakes succeeded. Performance baseline returned to stable. Monitoring triggers calibrated for active surveilance. Automated incident trace successfully archived"
             );
 
-            return diagnosticTrace;
+            return  new IncidentDiagnosticTraceDTO(
+                    diagnosticTrace.getMessage(),
+                    diagnosticTrace.getStatusCode(),
+                    diagnosticTrace.getResponseTimeMs(),
+                    diagnosticTrace.isSuccessful()
+            );
 
         } catch (Exception ex) {
             responseTimeMs = System.currentTimeMillis() - startTIme;
@@ -273,13 +286,20 @@ public class IncidentService {
             incidentDiagnosticRepository.save(diagnosticTrace);
 
             incidentActivityLogService.logActivity(
+                    tenantId,
                     incident,
                     ActivityType.DIAGNOSTIC,
                     "Diagnostic Closure Handshake",
                     "All verification handshakes failed. Performance baseline returned to unstable. Automated incident trace successfully archived"
             );
 
-            return diagnosticTrace;
+
+            return  new IncidentDiagnosticTraceDTO(
+                    diagnosticTrace.getMessage(),
+                    diagnosticTrace.getStatusCode(),
+                    diagnosticTrace.getResponseTimeMs(),
+                    diagnosticTrace.isSuccessful()
+            );
         }
 
 
@@ -313,6 +333,25 @@ public class IncidentService {
 
     }
 
+    public List<IncidentActivityDTO> getMonitorIncidentActivityTimeline(UUID incidentId){
+
+        UUID tenantId = TenantContext.getTenantId();
+
+        return incidentActivityRepository.findByIncidentIdAndTenantId(incidentId,tenantId)
+                .stream()
+                .map(incidentActivity->{
+                    IncidentActivityDTO dto = new IncidentActivityDTO();
+                    dto.setMessage(incidentActivity.getMessage());
+                    dto.setType(incidentActivity.getType());
+                    dto.setTitle(incidentActivity.getTitle());
+                    dto.setOccurredAt(incidentActivity.getOccurredAt());
+
+                    return  dto;
+                })
+                .toList();
+
+    }
+
     private void assignTeamMember(UUID tenantId, UUID incidentId, Membership assignee, Membership assigner) {
         Incident incident = incidentRepository.findByIdAndTenantId(incidentId, tenantId)
                 .orElseThrow(() -> new IncidentNotFoundException(
@@ -332,6 +371,7 @@ public class IncidentService {
             String message = String.format("Incident assigned to %s by %s", assigneeName, assignerName);
 
             incidentActivityLogService.logActivity(
+                    tenantId,
                     incident,
                     ActivityType.ACKNOWLEDGEMENT,
                     "On-Call Assignment Calibrated",

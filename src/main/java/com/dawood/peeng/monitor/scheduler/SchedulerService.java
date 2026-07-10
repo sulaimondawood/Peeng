@@ -24,8 +24,6 @@ public class SchedulerService {
     @Scheduled(fixedDelay = 1000)
     public void scheduleChecks() {
 
-        log.info("Scheduler Running...");
-
         List<Monitor> dueMonitors = monitorRepository
                 .findAllByLifecycleAndNextCheckAtLessThanEqual(MonitorLifecycleStatus.ACTIVE, LocalDateTime.now());
 

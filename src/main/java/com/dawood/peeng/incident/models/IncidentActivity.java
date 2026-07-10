@@ -2,6 +2,7 @@ package com.dawood.peeng.incident.models;
 
 import com.dawood.peeng.common.models.MetaData;
 import com.dawood.peeng.incident.enums.ActivityType;
+import com.dawood.peeng.tenant.model.Tenant;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,6 +24,10 @@ public class IncidentActivity extends MetaData {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "incident_id", nullable = false)
     private Incident incident;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id", nullable = false)
+    private Tenant tenant;
 
     @Column(nullable = false)
     private LocalDateTime occurredAt;

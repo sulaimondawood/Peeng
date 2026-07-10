@@ -18,7 +18,6 @@ public class IncidentNotificationListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onIncidentOpened(IncidentOpenedEvent event) {
-        log.info("Opened incident ID in Event Listener: {}", event.getIncidentId());
         notificationService.notifyIncidentOpened(event.getIncidentId());
     }
 

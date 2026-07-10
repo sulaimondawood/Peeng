@@ -4,7 +4,9 @@ import com.dawood.peeng.common.dto.ApiResponse;
 import com.dawood.peeng.common.dto.Meta;
 import com.dawood.peeng.incident.dto.request.IncidentAssignmentRequest;
 import com.dawood.peeng.incident.dto.request.IncidentFilterRequest;
+import com.dawood.peeng.incident.dto.response.IncidentActivityDTO;
 import com.dawood.peeng.incident.dto.response.IncidentDTO;
+import com.dawood.peeng.incident.dto.response.IncidentDiagnosticTraceDTO;
 import com.dawood.peeng.incident.dto.response.IncidentOverview;
 import com.dawood.peeng.incident.mapper.IncidentMapper;
 import com.dawood.peeng.incident.models.Incident;
@@ -66,7 +68,7 @@ private final MembershipService membershipService;
     }
 
     @PostMapping("/{incidentId}/trace")
-    public ResponseEntity<ApiResponse<IncidentDiagnosticTrace>> traceManualDiagnostic(@PathVariable("incidentId") UUID incidentId) {
+    public ResponseEntity<ApiResponse<IncidentDiagnosticTraceDTO>> traceManualDiagnostic(@PathVariable("incidentId") UUID incidentId) {
         return ResponseEntity.ok()
                 .body(ApiResponse.success("Request successful", incidentService.executeManualManualHandshake(incidentId)));
 
@@ -83,12 +85,21 @@ private final MembershipService membershipService;
 
     }
 
-    @PostMapping("/members")
+    @GetMapping("/workspace/members")
     public ResponseEntity<ApiResponse<List<MembershipResponseDTO>>> getTeamMembers() {
         return ResponseEntity.ok()
                 .body(ApiResponse.success("Request successful", membershipService.getAllMembersByTenant()));
 
     }
+
+
+    @GetMapping("/{incidentId}/activity-timeline")
+    public ResponseEntity<ApiResponse<List<IncidentActivityDTO>>> getMonitorIncidentActivityTimeline(@PathVariable("incidentId") UUID incidentId) {
+        return ResponseEntity.ok()
+                .body(ApiResponse.success("Request successful", incidentService.getMonitorIncidentActivityTimeline(incidentId)));
+
+    }
+
 
 
 }
