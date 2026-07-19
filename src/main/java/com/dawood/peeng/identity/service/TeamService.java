@@ -16,8 +16,10 @@ import com.dawood.peeng.identity.models.EmailVerificationToken;
 import com.dawood.peeng.identity.models.User;
 import com.dawood.peeng.identity.repository.EmailVerificationTokenRepository;
 import com.dawood.peeng.identity.repository.UserRepository;
+import com.dawood.peeng.membership.dtos.responses.MembershipDTO;
 import com.dawood.peeng.membership.enums.MembershipStatus;
 import com.dawood.peeng.membership.exceptions.MembershipException;
+import com.dawood.peeng.membership.mapper.MembershipMapper;
 import com.dawood.peeng.membership.models.Membership;
 import com.dawood.peeng.membership.repository.MembershipRepository;
 import com.dawood.peeng.tenant.context.TenantContext;
@@ -34,6 +36,8 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -395,4 +399,20 @@ public class TeamService {
 
         return  overview;
     }
+
+    public List<MembershipDTO> allMembers(){
+        UUID tenantId = TenantContext.getTenantId();
+
+        Collection<MembershipStatus> statuses = List.of(
+                MembershipStatus.ACTIVE,
+                MembershipStatus.INVITED,
+                MembershipStatus.SUSPENDED
+                );
+
+        return membershipRepository.findAllByTenantIdAndStatusIn(tenantId, statuses)
+                .stream()
+                .map(MembershipMapper::toDTO)
+                .toList();
+    }
+
 }

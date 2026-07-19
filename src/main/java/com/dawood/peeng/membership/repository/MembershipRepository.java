@@ -1,5 +1,6 @@
 package com.dawood.peeng.membership.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -41,5 +42,7 @@ public interface MembershipRepository extends JpaRepository<Membership, UUID> {
     WHERE m.tenant.id = :tenantId
 """)
   TeamOverview getTeamOverview(UUID tenantId);
+
+  List<Membership> findAllByTenantIdAndStatusIn(UUID tenantId, Collection<MembershipStatus> statuses);
 
 }
