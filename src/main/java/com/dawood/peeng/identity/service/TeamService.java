@@ -1,9 +1,12 @@
 package com.dawood.peeng.identity.service;
 
 import com.dawood.peeng.common.enums.ErrorCode;
+import com.dawood.peeng.common.exceptions.BadRequestException;
 import com.dawood.peeng.configs.RabbitMQConfig;
+import com.dawood.peeng.identity.dtos.request.CompleteInviteRegistrationDTO;
 import com.dawood.peeng.identity.dtos.request.MemberInviteDTO;
 import com.dawood.peeng.identity.dtos.request.MemberRoleDTO;
+import com.dawood.peeng.identity.dtos.response.InvitePreviewResponseDTO;
 import com.dawood.peeng.identity.enums.RoleType;
 import com.dawood.peeng.identity.enums.Status;
 import com.dawood.peeng.identity.event.MemberInviteEvent;
@@ -23,6 +26,7 @@ import com.dawood.peeng.tenant.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -40,6 +44,7 @@ public class TeamService {
     private final EmailVerificationTokenRepository tokenRepository;
     private final TenantRepository tenantRepository;
     private final RabbitTemplate rabbitTemplate;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public void sendInvite(MemberInviteDTO request){
@@ -293,5 +298,90 @@ public class TeamService {
 
         targetMembership.setRole(role.role());
         membershipRepository.save(targetMembership);
+    }
+
+    @Transactional(readOnly = true)
+    public InvitePreviewResponseDTO previewInvite(String tokenString) {
+        EmailVerificationToken token = tokenRepository.findByToken(tokenString)
+                .orElseThrow(() -> new BadRequestException(
+                        "Invalid or expired invitation link",
+                        HttpStatus.BAD_REQUEST,
+                        ErrorCode.BAD_REQUEST));
+
+        if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException(
+                    "This invitation link has expired",
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.BAD_REQUEST);
+        }
+
+        User invitedUser = token.getUser();
+
+        Membership membership = membershipRepository.findByUser_IdAndTenant_Id(
+                        invitedUser.getId(),
+                        invitedUser.getLastActiveTenantId())
+                .orElseThrow(() -> new MembershipException(
+                        "Invitation not found",
+                        HttpStatus.NOT_FOUND,
+                        ErrorCode.NOT_FOUND
+                ));
+
+        boolean isAlreadyRegistered = invitedUser.isEmailVerified() && invitedUser.getPasswordHash() != null;
+
+        return new InvitePreviewResponseDTO(
+                invitedUser.getEmail(),
+                isAlreadyRegistered,
+                membership.getTenant().getWorkspaceName()
+        );
+    }
+    @Transactional
+    public void completeRegistrationAndAcceptInvite(CompleteInviteRegistrationDTO request) {
+
+        EmailVerificationToken token = tokenRepository.findByToken(request.token())
+                .orElseThrow(() -> new BadRequestException(
+                        "Invalid or expired invitation link",
+                        HttpStatus.BAD_REQUEST,
+                        ErrorCode.BAD_REQUEST));
+
+        if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException(
+                    "This invitation link has expired",
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.BAD_REQUEST
+                    );
+        }
+
+        User invitedUser = token.getUser();
+        Membership membership = membershipRepository.findByUser_IdAndTenant_Id(
+                        invitedUser.getId(),
+                        invitedUser.getLastActiveTenantId())
+                .orElseThrow(() -> new MembershipException(
+                        "Invitation not found",
+                        HttpStatus.NOT_FOUND,
+                        ErrorCode.NOT_FOUND
+                        ));
+
+        if (membership.getStatus() != MembershipStatus.INVITED) {
+            throw new MembershipException(
+                    "This invitation has already been processed",
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.BAD_REQUEST
+                    );
+        }
+
+        membership.setStatus(MembershipStatus.ACTIVE);
+        membership.setJoinedAt(LocalDateTime.now());
+        membershipRepository.save(membership);
+
+        invitedUser.setName(request.name());
+        invitedUser.setPasswordHash(passwordEncoder.encode(request.password()));
+        invitedUser.setStatus(Status.ACTIVE);
+        invitedUser.setEmailVerified(true);
+        invitedUser.setLastActiveTenantId(membership.getTenant().getId());
+        userRepository.save(invitedUser);
+
+        tokenRepository.delete(token);
+
+        // Optional: Send welcome notification / email
     }
 }
