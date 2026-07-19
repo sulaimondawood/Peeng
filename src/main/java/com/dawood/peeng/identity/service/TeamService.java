@@ -7,6 +7,7 @@ import com.dawood.peeng.identity.enums.RoleType;
 import com.dawood.peeng.identity.enums.Status;
 import com.dawood.peeng.identity.event.MemberInviteEvent;
 import com.dawood.peeng.identity.exceptions.UnauthorizedException;
+import com.dawood.peeng.identity.exceptions.UserNotFoundException;
 import com.dawood.peeng.identity.models.EmailVerificationToken;
 import com.dawood.peeng.identity.models.User;
 import com.dawood.peeng.identity.repository.EmailVerificationTokenRepository;
@@ -119,7 +120,64 @@ public class TeamService {
         });
     }
 
-    public void resendInvite(){
-        
+    @Transactional
+    public void resendInvite(UUID memberId){
+
+        User user = identityService.getCurrentLoggedInUser();
+        UUID tenantId = TenantContext.getTenantId();
+        Membership currentUsermembership = membershipRepository.findByUser_IdAndTenant_Id(user.getId(),tenantId)
+                .orElseThrow(()->new MembershipException(
+                        "You do not belong to this workspace",
+                        HttpStatus.BAD_REQUEST,
+                        ErrorCode.BAD_REQUEST
+                ));
+
+        if(currentUsermembership.getRole() != RoleType.OWNER && currentUsermembership.getRole() !=RoleType.ADMIN){
+            throw new UnauthorizedException(
+                    "You're not authorized to perform this action",
+                    HttpStatus.UNAUTHORIZED,
+                    ErrorCode.UNAUTHORIZED);
+        }
+
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(()->new TenantException(
+                        "Workspace does not exists",
+                        HttpStatus.NOT_FOUND,
+                        ErrorCode.NOT_FOUND
+                ));
+
+        Membership membership = membershipRepository.findByIdAndTenantId(memberId, tenantId)
+                .orElseThrow(() -> new MembershipException("Invitation not found",HttpStatus.NOT_FOUND,ErrorCode.NOT_FOUND ));
+
+
+        User targetUser = membership.getUser();
+
+        tokenRepository.deleteByUser(targetUser);
+
+        EmailVerificationToken newToken = EmailVerificationToken.builder()
+                .token(UUID.randomUUID().toString())
+                .user(targetUser)
+                .expiresAt(LocalDateTime.now().plusHours(24))
+                .build();
+
+       EmailVerificationToken savedToken = tokenRepository.save(newToken);
+
+        String tokenString = savedToken.getToken();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                rabbitTemplate.convertAndSend(
+                        RabbitMQConfig.EXCHANGE,
+                        RabbitMQConfig.EMAIL_INVITATION_ROUTING_KEY,
+                        new MemberInviteEvent(
+                                tenant.getWorkspaceName(),
+                                user.getName(),
+                                targetUser.getEmail(),
+                                tokenString
+                        )
+                );
+            }
+        });
+
     }
 }
