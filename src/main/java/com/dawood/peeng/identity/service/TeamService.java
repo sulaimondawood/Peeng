@@ -7,6 +7,7 @@ import com.dawood.peeng.identity.dtos.request.CompleteInviteRegistrationDTO;
 import com.dawood.peeng.identity.dtos.request.MemberInviteDTO;
 import com.dawood.peeng.identity.dtos.request.MemberRoleDTO;
 import com.dawood.peeng.identity.dtos.response.InvitePreviewResponseDTO;
+import com.dawood.peeng.identity.dtos.response.TeamOverview;
 import com.dawood.peeng.identity.enums.RoleType;
 import com.dawood.peeng.identity.enums.Status;
 import com.dawood.peeng.identity.event.MemberInviteEvent;
@@ -383,5 +384,15 @@ public class TeamService {
 
         tokenRepository.delete(token);
         // Send welcome notification / email
+    }
+
+    public TeamOverview teamMemberOverview(){
+        TeamOverview overview = membershipRepository.getTeamOverview(TenantContext.getTenantId());
+
+        if(overview==null){
+            return new TeamOverview(0, 0, 0, 0);
+        }
+
+        return  overview;
     }
 }

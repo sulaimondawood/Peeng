@@ -4,10 +4,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.dawood.peeng.identity.dtos.response.TeamOverview;
 import com.dawood.peeng.membership.enums.MembershipStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.dawood.peeng.membership.models.Membership;
+import org.springframework.data.jpa.repository.Query;
 
 public interface MembershipRepository extends JpaRepository<Membership, UUID> {
   Optional<Membership> findByUser_EmailAndTenant_Id(
@@ -29,5 +31,15 @@ public interface MembershipRepository extends JpaRepository<Membership, UUID> {
 
   Optional<Membership> findByTenantIdAndStatus(UUID tenantId, MembershipStatus status);
 
-  void deleteByIdAndTenantId(UUID id, UUID tenantId);
+  @Query("""
+    SELECT new com.dawood.peeng.identity.dtos.response.TeamOverview(
+        CAST(COUNT(m) AS int),
+        CAST(SUM(CASE WHEN m.status='ACTIVE' THEN 1 ELSE 0 END) AS int),
+        CAST(SUM(CASE WHEN m.status='INVITED' THEN 1 ELSE 0 END) AS int),
+        CAST(SUM(CASE WHEN m.status='SUSPENDED' THEN 1 ELSE 0 END) AS int)
+    ) FROM Membership m
+    WHERE m.tenant.id = :tenantId
+""")
+  TeamOverview getTeamOverview(UUID tenantId);
+
 }
