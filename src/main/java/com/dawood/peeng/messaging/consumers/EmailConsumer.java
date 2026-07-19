@@ -1,6 +1,7 @@
 package com.dawood.peeng.messaging.consumers;
 
 import com.dawood.peeng.common.enums.ErrorCode;
+import com.dawood.peeng.identity.event.MemberInviteEvent;
 import com.dawood.peeng.incident.events.IncidentAssignedEvent;
 import com.dawood.peeng.incident.exceptions.IncidentNotFoundException;
 import com.dawood.peeng.incident.models.Incident;
@@ -93,6 +94,30 @@ public class EmailConsumer {
 
         } catch (Exception e) {
             log.error("Error processing incident assigned email template or sending message", e);
+            throw e;
+        }
+
+    }
+
+    @RabbitListener(queues = RabbitMQConfig.EMAIL_INVITATION_QUEUE)
+    public void consumeMemberInviteEmail(MemberInviteEvent event){
+        log.info("Received Member invite Event");
+
+        String inviteUrl = String.format("%s/invite/accept?token=%s", clientUrl, event.getToken());
+
+        Context context = new Context();
+        context.setVariable("workspaceName", event.getWorkspaceName());
+        context.setVariable("inviterName", event.getUser());
+        context.setVariable("inviteeEmail", event.getEmail());
+        context.setVariable("inviteUrl", inviteUrl);
+
+        try {
+            String subject = String.format("You've been invited to join %s on Peeng", event.getWorkspaceName());
+            String body = templateEngine.process("member-invitation", context);
+            emailService.send(event.getEmail(), subject, body);
+            log.info("Successfully sent workspace invitation email to {}", event.getEmail());
+        } catch (Exception e) {
+            log.error("Error processing email template or sending message", e);
             throw e;
         }
 

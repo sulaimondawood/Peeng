@@ -5,6 +5,7 @@ import com.dawood.peeng.configs.RabbitMQConfig;
 import com.dawood.peeng.identity.dtos.request.MemberInviteDTO;
 import com.dawood.peeng.identity.enums.RoleType;
 import com.dawood.peeng.identity.enums.Status;
+import com.dawood.peeng.identity.event.MemberInviteEvent;
 import com.dawood.peeng.identity.exceptions.UnauthorizedException;
 import com.dawood.peeng.identity.models.EmailVerificationToken;
 import com.dawood.peeng.identity.models.User;
@@ -18,7 +19,6 @@ import com.dawood.peeng.tenant.context.TenantContext;
 import com.dawood.peeng.tenant.exceptions.TenantException;
 import com.dawood.peeng.tenant.model.Tenant;
 import com.dawood.peeng.tenant.repository.TenantRepository;
-import com.dawood.peeng.utils.SlugUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.HttpStatus;
@@ -61,21 +61,30 @@ public class TeamService {
                     ErrorCode.UNAUTHORIZED);
         }
 
-        User newUser = new User();
-        newUser.setStatus(Status.INVITED);
-        newUser.setEmail(request.email());
-        newUser.setEmailVerified(true);
-        newUser.setName("Invited User");
-        newUser.setLastActiveTenantId(tenantId);
+        User targetUser = userRepository.findByEmailIgnoreCase(request.email()).orElse(null);
+        boolean isNewUser = (targetUser == null);
 
-        User savedUser = userRepository.save(newUser);
+        if(isNewUser){
+            targetUser =  new User();
+            targetUser.setStatus(Status.INVITED);
+            targetUser.setEmail(request.email());
+            targetUser.setEmailVerified(true);
+            targetUser.setName("Invited User");
+            targetUser.setLastActiveTenantId(tenantId);
+            targetUser = userRepository.save(targetUser);
+        }else{
+            boolean alreadyMember = membershipRepository.findByUser_IdAndTenant_Id(targetUser.getId(), tenantId).isPresent();
+            if (alreadyMember) {
+                throw new MembershipException("User is already a member or invited to this workspace", HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
+            }
+        }
 
         EmailVerificationToken token = EmailVerificationToken.builder()
                 .token(UUID.randomUUID().toString())
-                .user(savedUser)
+                .user(targetUser)
                 .expiresAt(LocalDateTime.now().plusHours(24))
                 .build();
-        tokenRepository.save(token);
+        EmailVerificationToken savedToken = tokenRepository.save(token);
 
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(()->new TenantException(
@@ -85,23 +94,26 @@ public class TeamService {
                 ));
 
         Membership newMembership = new Membership();
-        newMembership.setUser(newUser);
+        newMembership.setUser(targetUser);
         newMembership.setRole(request.role());
         newMembership.setTenant(tenant);
         newMembership.setInvitedByUserId(user.getId());
         newMembership.setStatus(MembershipStatus.INVITED);
-
         membershipRepository.save(newMembership);
 
-
-
-
+        String tokenString = savedToken.getToken();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
                 rabbitTemplate.convertAndSend(
                         RabbitMQConfig.EXCHANGE,
                         RabbitMQConfig.EMAIL_INVITATION_ROUTING_KEY,
+                        new MemberInviteEvent(
+                                tenant.getWorkspaceName(),
+                                user.getName(),
+                                request.email(),
+                               tokenString
+                        )
                         );
             }
         });
