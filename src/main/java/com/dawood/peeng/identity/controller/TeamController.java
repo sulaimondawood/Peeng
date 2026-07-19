@@ -6,10 +6,9 @@ import com.dawood.peeng.identity.service.TeamService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,6 +25,12 @@ public class TeamController {
         return ResponseEntity.ok(ApiResponse.success(
                 "Invitation dispatched successfully",
                 null));
+    }
+
+    @PostMapping("/invitations/{membershipId}/resend")
+    public ResponseEntity<ApiResponse<Void>> resendWorkspaceInvite(@PathVariable UUID membershipId) {
+        teamService.resendInvite(membershipId);
+        return ResponseEntity.ok(ApiResponse.success("A fresh invitation link has been successfully dispatched.", null));
     }
 
 

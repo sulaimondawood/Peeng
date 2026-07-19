@@ -28,4 +28,6 @@ public interface MembershipRepository extends JpaRepository<Membership, UUID> {
   Optional<Membership> findByIdAndTenantIdAndStatus(UUID memberId, UUID tenantId, MembershipStatus status);
 
   Optional<Membership> findByTenantIdAndStatus(UUID tenantId, MembershipStatus status);
+
+  void deleteByIdAndTenantId(UUID id, UUID tenantId);
 }

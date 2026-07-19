@@ -7,7 +7,6 @@ import com.dawood.peeng.identity.enums.RoleType;
 import com.dawood.peeng.identity.enums.Status;
 import com.dawood.peeng.identity.event.MemberInviteEvent;
 import com.dawood.peeng.identity.exceptions.UnauthorizedException;
-import com.dawood.peeng.identity.exceptions.UserNotFoundException;
 import com.dawood.peeng.identity.models.EmailVerificationToken;
 import com.dawood.peeng.identity.models.User;
 import com.dawood.peeng.identity.repository.EmailVerificationTokenRepository;
@@ -178,6 +177,56 @@ public class TeamService {
                 );
             }
         });
+
+    }
+
+    @Transactional
+    public void deleteMember(UUID memberId){
+
+        UUID tenantId = TenantContext.getTenantId();
+
+        Membership targetMembership = membershipRepository.findByIdAndTenantId(memberId, tenantId)
+                .orElseThrow(() -> new MembershipException(
+                        "Member not found",
+                        HttpStatus.NOT_FOUND,
+                        ErrorCode.NOT_FOUND ));
+
+        User currentLoggedInUser = identityService.getCurrentLoggedInUser();
+
+        Membership currentLoggedInUserMembership = membershipRepository.findByUser_IdAndTenant_Id(currentLoggedInUser.getId(),tenantId)
+                .orElseThrow(()->new MembershipException(
+                        "You do not belong to this workspace",
+                        HttpStatus.BAD_REQUEST,
+                        ErrorCode.BAD_REQUEST
+                ));
+
+        if(currentLoggedInUserMembership.getRole() != RoleType.OWNER && currentLoggedInUserMembership.getRole() !=RoleType.ADMIN){
+            throw new UnauthorizedException(
+                    "You're not authorized to perform this action",
+                    HttpStatus.UNAUTHORIZED,
+                    ErrorCode.UNAUTHORIZED);
+        }
+
+        if((currentLoggedInUserMembership.getRole() == RoleType.ADMIN && targetMembership.getRole() ==RoleType.ADMIN)
+                || (currentLoggedInUserMembership.getRole() == RoleType.ADMIN && targetMembership.getRole() ==RoleType.OWNER)){
+            throw new UnauthorizedException(
+                    "You're not authorized to perform this action",
+                    HttpStatus.UNAUTHORIZED,
+                    ErrorCode.UNAUTHORIZED);
+        }
+
+        if(currentLoggedInUserMembership.getRole() == RoleType.OWNER && targetMembership.getRole() ==RoleType.OWNER){
+            throw new UnauthorizedException(
+                    "You're not authorized to perform this action, kindly transfer ownership.",
+                    HttpStatus.UNAUTHORIZED,
+                    ErrorCode.UNAUTHORIZED);
+        }
+
+        if (targetMembership.getStatus() == MembershipStatus.INVITED) {
+            tokenRepository.deleteByUser(targetMembership.getUser());
+        }
+
+        membershipRepository.deleteByIdAndTenantId(targetMembership.getId(), tenantId);
 
     }
 }
