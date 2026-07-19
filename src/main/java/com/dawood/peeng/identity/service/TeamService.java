@@ -3,6 +3,7 @@ package com.dawood.peeng.identity.service;
 import com.dawood.peeng.common.enums.ErrorCode;
 import com.dawood.peeng.configs.RabbitMQConfig;
 import com.dawood.peeng.identity.dtos.request.MemberInviteDTO;
+import com.dawood.peeng.identity.dtos.request.MemberRoleDTO;
 import com.dawood.peeng.identity.enums.RoleType;
 import com.dawood.peeng.identity.enums.Status;
 import com.dawood.peeng.identity.event.MemberInviteEvent;
@@ -45,9 +46,9 @@ public class TeamService {
 
         UUID tenantId = TenantContext.getTenantId();
 
-        User user = identityService.getCurrentLoggedInUser();
+        User currentLoggedInUser = identityService.getCurrentLoggedInUser();
 
-        Membership membership = membershipRepository.findByUser_IdAndTenant_Id(user.getId(),tenantId)
+        Membership membership = membershipRepository.findByUser_IdAndTenant_Id(currentLoggedInUser.getId(),tenantId)
                 .orElseThrow(()->new MembershipException(
                         "You do not belong to this workspace",
                         HttpStatus.BAD_REQUEST,
@@ -61,22 +62,24 @@ public class TeamService {
                     ErrorCode.UNAUTHORIZED);
         }
 
-        User targetUser = userRepository.findByEmailIgnoreCase(request.email()).orElse(null);
-        boolean isNewUser = (targetUser == null);
+        User targetUser = userRepository.findByEmailIgnoreCase(request.email()).orElseGet(()->{
+            User newUser = new User();
+            newUser.setStatus(Status.INVITED);
+            newUser.setEmail(request.email());
+            newUser.setEmailVerified(false);
+            newUser.setName("Invited User");
+            newUser.setLastActiveTenantId(tenantId);
+            return userRepository.save(newUser);
+        });
 
-        if(isNewUser){
-            targetUser =  new User();
-            targetUser.setStatus(Status.INVITED);
-            targetUser.setEmail(request.email());
-            targetUser.setEmailVerified(true);
-            targetUser.setName("Invited User");
-            targetUser.setLastActiveTenantId(tenantId);
-            targetUser = userRepository.save(targetUser);
-        }else{
-            boolean alreadyMember = membershipRepository.findByUser_IdAndTenant_Id(targetUser.getId(), tenantId).isPresent();
-            if (alreadyMember) {
-                throw new MembershipException("User is already a member or invited to this workspace", HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
-            }
+        boolean alreadyMember = membershipRepository
+                .findByUser_IdAndTenant_Id(targetUser.getId(), tenantId)
+                .isPresent();
+
+        if (alreadyMember) {
+            throw new MembershipException(
+                    "User is already a member or invited to this workspace",
+                    HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
         }
 
         EmailVerificationToken token = EmailVerificationToken.builder()
@@ -97,7 +100,7 @@ public class TeamService {
         newMembership.setUser(targetUser);
         newMembership.setRole(request.role());
         newMembership.setTenant(tenant);
-        newMembership.setInvitedByUserId(user.getId());
+        newMembership.setInvitedByUserId(currentLoggedInUser.getId());
         newMembership.setStatus(MembershipStatus.INVITED);
         membershipRepository.save(newMembership);
 
@@ -110,7 +113,7 @@ public class TeamService {
                         RabbitMQConfig.EMAIL_INVITATION_ROUTING_KEY,
                         new MemberInviteEvent(
                                 tenant.getWorkspaceName(),
-                                user.getName(),
+                                currentLoggedInUser.getName(),
                                 request.email(),
                                tokenString
                         )
@@ -145,12 +148,18 @@ public class TeamService {
                         ErrorCode.NOT_FOUND
                 ));
 
-        Membership membership = membershipRepository.findByIdAndTenantId(memberId, tenantId)
-                .orElseThrow(() -> new MembershipException("Invitation not found",HttpStatus.NOT_FOUND,ErrorCode.NOT_FOUND ));
+        Membership targetMembership = membershipRepository.findByIdAndTenantId(memberId, tenantId)
+                .orElseThrow(() -> new MembershipException(
+                        "Invitation not found",
+                        HttpStatus.NOT_FOUND,
+                        ErrorCode.NOT_FOUND ));
 
+        if (targetMembership.getStatus() != MembershipStatus.INVITED) {
+            throw new MembershipException("Can only resend invitation for pending invites",
+                    HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
+        }
 
-        User targetUser = membership.getUser();
-
+        User targetUser = targetMembership.getUser();
         tokenRepository.deleteByUser(targetUser);
 
         EmailVerificationToken newToken = EmailVerificationToken.builder()
@@ -226,11 +235,15 @@ public class TeamService {
             tokenRepository.deleteByUser(targetMembership.getUser());
         }
 
-        membershipRepository.deleteByIdAndTenantId(targetMembership.getId(), tenantId);
+        targetMembership.setStatus(MembershipStatus.REMOVED);
+        targetMembership.setRemovedBy(currentLoggedInUserMembership.getUser().getId());
+        targetMembership.setRemovedAt(LocalDateTime.now());
+        membershipRepository.save(targetMembership);
 
     }
 
-    public void modifyMemberRole(UUID memberId, ){
+    @Transactional
+    public void modifyMemberRole(UUID memberId, MemberRoleDTO role) {
 
         UUID tenantId = TenantContext.getTenantId();
 
@@ -241,33 +254,44 @@ public class TeamService {
                         ErrorCode.NOT_FOUND ));
 
         User currentLoggedInUser = identityService.getCurrentLoggedInUser();
-        Membership currentLoggedInUserMembership = membershipRepository.findByUser_IdAndTenant_Id(currentLoggedInUser.getId(),tenantId)
-                .orElseThrow(()->new MembershipException(
+        Membership currentLoggedInUserMembership = membershipRepository.findByUser_IdAndTenant_Id(currentLoggedInUser.getId(), tenantId)
+                .orElseThrow(() -> new MembershipException(
                         "You do not belong to this workspace",
                         HttpStatus.BAD_REQUEST,
                         ErrorCode.BAD_REQUEST
                 ));
 
-        if(currentLoggedInUserMembership.getRole() != RoleType.OWNER && currentLoggedInUserMembership.getRole() !=RoleType.ADMIN){
+        if (currentLoggedInUserMembership.getRole() != RoleType.OWNER && currentLoggedInUserMembership.getRole() != RoleType.ADMIN) {
             throw new UnauthorizedException(
                     "You're not authorized to perform this action",
                     HttpStatus.UNAUTHORIZED,
                     ErrorCode.UNAUTHORIZED);
         }
 
-        if((currentLoggedInUserMembership.getRole() == RoleType.ADMIN && targetMembership.getRole() ==RoleType.ADMIN)
-                || (currentLoggedInUserMembership.getRole() == RoleType.ADMIN && targetMembership.getRole() ==RoleType.OWNER)){
+        if (currentLoggedInUserMembership.getRole() == RoleType.ADMIN &&
+                (targetMembership.getRole() == RoleType.ADMIN || targetMembership.getRole() == RoleType.OWNER)) {
             throw new UnauthorizedException(
-                    "You're not authorized to perform this action",
+                    "You're not authorized to modify this operator's tier",
                     HttpStatus.UNAUTHORIZED,
                     ErrorCode.UNAUTHORIZED);
         }
 
-        if(currentLoggedInUserMembership.getRole() == RoleType.OWNER && targetMembership.getRole() ==RoleType.OWNER){
+        if (currentLoggedInUserMembership.getRole() == RoleType.ADMIN &&
+                (role.role() == RoleType.ADMIN || role.role() == RoleType.OWNER)) {
+            throw new UnauthorizedException(
+                    "Administrators cannot provision Admin or Owner administrative authorities",
+                    HttpStatus.UNAUTHORIZED,
+                    ErrorCode.UNAUTHORIZED);
+        }
+
+        if (currentLoggedInUserMembership.getRole() == RoleType.OWNER && targetMembership.getRole() == RoleType.OWNER) {
             throw new UnauthorizedException(
                     "You're not authorized to perform this action, kindly transfer ownership.",
                     HttpStatus.UNAUTHORIZED,
                     ErrorCode.UNAUTHORIZED);
         }
+
+        targetMembership.setRole(role.role());
+        membershipRepository.save(targetMembership);
     }
 }

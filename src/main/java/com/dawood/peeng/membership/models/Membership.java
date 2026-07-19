@@ -61,4 +61,8 @@ public class Membership extends MetaData {
   @Enumerated(EnumType.STRING)
   private MembershipStatus status;
 
+  private UUID removedBy;
+
+  private LocalDateTime removedAt;
+
 }
