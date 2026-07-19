@@ -76,7 +76,7 @@ private final MembershipService membershipService;
 
     @PostMapping("/{incidentId}/assign")
     public ResponseEntity<ApiResponse<Void>> assignToMember(
-            @PathVariable("incidentId") UUID incidentId,
+            @PathVariable UUID incidentId,
             @RequestBody @Valid IncidentAssignmentRequest request) {
 
         incidentService.assignTeamMemberToIncident(incidentId, request.memberId());

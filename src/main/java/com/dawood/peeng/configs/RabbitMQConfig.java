@@ -24,6 +24,9 @@ public class RabbitMQConfig {
     public static final String EMAIL_QUEUE = "peeng.email.verification.queue";
     public static final String EMAIL_ROUTING_KEY = "peeng.email.verification";
 
+    public static final String EMAIL_INVITATION_QUEUE = "peeng.email.invitaion.queue";
+    public static final String EMAIL_INVITATION_ROUTING_KEY = "peeng.email.invitation";
+
     public static final String INCIDENT_OPENED_QUEUE = "incident.opened.queue";
     public static final String INCIDENT_OPENED_ROUTING_KEY = "incident.opened";
 
@@ -55,6 +58,23 @@ public class RabbitMQConfig {
                 .bind(deadLetterQueue)
                 .to(deadLetterExchange)
                 .with(DLX_ROUTING_KEY);
+    }
+
+    @Bean
+    public Queue memberInvitationQueue(){
+        return QueueBuilder
+                .durable(EMAIL_INVITATION_QUEUE)
+                .deadLetterExchange(DLX_EXCHANGE)
+                .deadLetterRoutingKey(DLX_ROUTING_KEY)
+                .build();
+    }
+
+    @Bean
+    public Binding memberInvitationQueueBinding(TopicExchange topicExchange, Queue memberInvitationQueue){
+        return BindingBuilder
+                .bind(memberInvitationQueue)
+                .to(topicExchange)
+                .with(EMAIL_INVITATION_ROUTING_KEY);
     }
 
     @Bean
