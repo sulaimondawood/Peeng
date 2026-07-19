@@ -316,7 +316,6 @@ public class TeamService {
         }
 
         User invitedUser = token.getUser();
-
         Membership membership = membershipRepository.findByUser_IdAndTenant_Id(
                         invitedUser.getId(),
                         invitedUser.getLastActiveTenantId())
@@ -334,6 +333,7 @@ public class TeamService {
                 membership.getTenant().getWorkspaceName()
         );
     }
+
     @Transactional
     public void completeRegistrationAndAcceptInvite(CompleteInviteRegistrationDTO request) {
 
@@ -369,19 +369,19 @@ public class TeamService {
                     );
         }
 
-        membership.setStatus(MembershipStatus.ACTIVE);
-        membership.setJoinedAt(LocalDateTime.now());
-        membershipRepository.save(membership);
-
         invitedUser.setName(request.name());
         invitedUser.setPasswordHash(passwordEncoder.encode(request.password()));
         invitedUser.setStatus(Status.ACTIVE);
         invitedUser.setEmailVerified(true);
         invitedUser.setLastActiveTenantId(membership.getTenant().getId());
+        invitedUser.setLastLoginAt(LocalDateTime.now());
         userRepository.save(invitedUser);
 
-        tokenRepository.delete(token);
+        membership.setStatus(MembershipStatus.ACTIVE);
+        membership.setJoinedAt(LocalDateTime.now());
+        membershipRepository.save(membership);
 
-        // Optional: Send welcome notification / email
+        tokenRepository.delete(token);
+        // Send welcome notification / email
     }
 }
