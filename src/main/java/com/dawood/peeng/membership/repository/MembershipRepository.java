@@ -34,7 +34,7 @@ public interface MembershipRepository extends JpaRepository<Membership, UUID> {
 
   @Query("""
     SELECT new com.dawood.peeng.identity.dtos.response.TeamOverview(
-        CAST(COUNT(m) AS int),
+        CAST(SUM(CASE WHEN m.status IN ('ACTIVE','INVITED','SUSPENDED') THEN 1 ELSE 0 END) AS int),
         CAST(SUM(CASE WHEN m.status='ACTIVE' THEN 1 ELSE 0 END) AS int),
         CAST(SUM(CASE WHEN m.status='INVITED' THEN 1 ELSE 0 END) AS int),
         CAST(SUM(CASE WHEN m.status='SUSPENDED' THEN 1 ELSE 0 END) AS int)

@@ -4,6 +4,6 @@ import com.dawood.peeng.identity.enums.RoleType;
 import jakarta.validation.constraints.NotNull;
 
 public record MemberRoleDTO(
-       @NotNull RoleType role
+       @NotNull(message = "Role type is required") RoleType role
 ) {
 }

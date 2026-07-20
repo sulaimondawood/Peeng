@@ -23,6 +23,14 @@ public class TeamController {
 
     private final TeamService teamService;
 
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<MembershipDTO>>> allMembers() {
+        List<MembershipDTO> res = teamService.allMembers();
+        return ResponseEntity.ok(ApiResponse.success(
+                "Team directory roster retrieved successfully.",
+                res));
+    }
+
     @PostMapping("/invitation")
     public ResponseEntity<ApiResponse<Void>> inviteTeamMember(
             @Valid @RequestBody MemberInviteDTO request) {
@@ -33,14 +41,14 @@ public class TeamController {
                 null));
     }
 
-    @PostMapping("/invitations/{membershipId}/resend")
+    @PostMapping("/invitation/{membershipId}/resend")
     public ResponseEntity<ApiResponse<Void>> resendWorkspaceInvite(@PathVariable UUID membershipId) {
         teamService.resendInvite(membershipId);
         return ResponseEntity.ok(ApiResponse.success(
                 "A fresh invitation link has been successfully dispatched.",
                 null));
     }
-    @DeleteMapping("/{membershipId}/delete")
+    @DeleteMapping("/{membershipId}/remove")
     public ResponseEntity<ApiResponse<Void>> deleteMember(@PathVariable UUID membershipId) {
         teamService.deleteMember(membershipId);
         return ResponseEntity.ok(ApiResponse.success(
@@ -51,7 +59,7 @@ public class TeamController {
     @PatchMapping("/{membershipId}/role")
     public ResponseEntity<ApiResponse<Void>> modifyMemberRole(
             @PathVariable UUID membershipId,
-            @RequestBody MemberRoleDTO request) {
+            @RequestBody @Valid MemberRoleDTO request) {
         teamService.modifyMemberRole(membershipId, request);
         return ResponseEntity.ok(ApiResponse.success(
                 "Operator permissions tier updated successfully.",
@@ -67,7 +75,7 @@ public class TeamController {
     }
 
     @PostMapping("/accept-invite")
-    public ResponseEntity<ApiResponse<Void>> acceptInviteAndRegister(@RequestBody @Valid CompleteInviteRegistrationDTO request) { // ✅ Fixed duplicate method name
+    public ResponseEntity<ApiResponse<Void>> acceptInviteAndRegister(@RequestBody @Valid CompleteInviteRegistrationDTO request) {
         teamService.completeRegistrationAndAcceptInvite(request);
         return ResponseEntity.ok(ApiResponse.success(
                 "Account setup successful. Welcome aboard!",
@@ -79,14 +87,6 @@ public class TeamController {
         TeamOverview res = teamService.teamMemberOverview();
         return ResponseEntity.ok(ApiResponse.success(
                 "Team metric aggregations loaded successfully.",
-                res));
-    }
-
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<MembershipDTO>>> allMembers() {
-        List<MembershipDTO> res = teamService.allMembers();
-        return ResponseEntity.ok(ApiResponse.success(
-                "Team directory roster retrieved successfully.",
                 res));
     }
 }

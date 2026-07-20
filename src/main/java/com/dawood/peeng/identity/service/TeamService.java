@@ -38,6 +38,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -58,14 +59,14 @@ public class TeamService {
 
         User currentLoggedInUser = identityService.getCurrentLoggedInUser();
 
-        Membership membership = membershipRepository.findByUser_IdAndTenant_Id(currentLoggedInUser.getId(),tenantId)
+        Membership actorMembership = membershipRepository.findByUser_IdAndTenant_Id(currentLoggedInUser.getId(),tenantId)
                 .orElseThrow(()->new MembershipException(
                         "You do not belong to this workspace",
                         HttpStatus.BAD_REQUEST,
                         ErrorCode.BAD_REQUEST
                 ));
 
-        if(membership.getRole() != RoleType.OWNER && membership.getRole() !=RoleType.ADMIN){
+        if(actorMembership.getRole() != RoleType.OWNER && actorMembership.getRole() !=RoleType.ADMIN){
             throw new UnauthorizedException(
                     "You're not authorized to perform this action",
                     HttpStatus.UNAUTHORIZED,
@@ -74,7 +75,7 @@ public class TeamService {
 
         User targetUser = userRepository.findByEmailIgnoreCase(request.email()).orElseGet(()->{
             User newUser = new User();
-            newUser.setStatus(Status.INVITED);
+            newUser.setStatus(Status.ACTIVE);
             newUser.setEmail(request.email());
             newUser.setEmailVerified(false);
             newUser.setName("Invited User");
@@ -82,15 +83,51 @@ public class TeamService {
             return userRepository.save(newUser);
         });
 
-        boolean alreadyMember = membershipRepository
-                .findByUser_IdAndTenant_Id(targetUser.getId(), tenantId)
-                .isPresent();
+        Optional<Membership> existingMembershipOpt = membershipRepository
+                .findByUser_IdAndTenant_Id(targetUser.getId(), tenantId);
 
-        if (alreadyMember) {
-            throw new MembershipException(
-                    "User is already a member or invited to this workspace",
-                    HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
+        Membership membership;
+
+        if (existingMembershipOpt.isPresent()) {
+            membership = existingMembershipOpt.get();
+
+            if (membership.getStatus() == MembershipStatus.ACTIVE) {
+                throw new MembershipException(
+                        "User is already a member of this workspace",
+                        HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
+            }
+            else if (membership.getStatus() == MembershipStatus.REMOVED) {
+                // Re-invite removed user
+                membership.setStatus(MembershipStatus.INVITED);
+                membership.setInvitedByUserId(currentLoggedInUser.getId());
+                membership.setRemovedBy(null);
+                membership.setRemovedAt(null);
+                // Role can be updated if needed
+                membership.setRole(request.role());
+            }
+            else {
+                // Already invited
+                throw new MembershipException(
+                        "User is already invited to this workspace",
+                        HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
+            }
+        } else {
+
+            Tenant tenant = tenantRepository.findById(tenantId)
+                    .orElseThrow(() -> new TenantException(
+                            "Workspace does not exist",
+                            HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
+
+            membership = new Membership();
+            membership.setUser(targetUser);
+            membership.setRole(request.role());
+            membership.setTenant(tenant);
+            membership.setInvitedByUserId(currentLoggedInUser.getId());
+            membership.setStatus(MembershipStatus.INVITED);
         }
+
+        membershipRepository.save(membership);
+
 
         EmailVerificationToken token = EmailVerificationToken.builder()
                 .token(UUID.randomUUID().toString())
@@ -98,21 +135,6 @@ public class TeamService {
                 .expiresAt(LocalDateTime.now().plusHours(24))
                 .build();
         EmailVerificationToken savedToken = tokenRepository.save(token);
-
-        Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(()->new TenantException(
-                        "Workspace does not exists",
-                        HttpStatus.NOT_FOUND,
-                        ErrorCode.NOT_FOUND
-                ));
-
-        Membership newMembership = new Membership();
-        newMembership.setUser(targetUser);
-        newMembership.setRole(request.role());
-        newMembership.setTenant(tenant);
-        newMembership.setInvitedByUserId(currentLoggedInUser.getId());
-        newMembership.setStatus(MembershipStatus.INVITED);
-        membershipRepository.save(newMembership);
 
         String tokenString = savedToken.getToken();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -122,7 +144,7 @@ public class TeamService {
                         RabbitMQConfig.EXCHANGE,
                         RabbitMQConfig.EMAIL_INVITATION_ROUTING_KEY,
                         new MemberInviteEvent(
-                                tenant.getWorkspaceName(),
+                                membership.getTenant().getWorkspaceName(),
                                 currentLoggedInUser.getName(),
                                 request.email(),
                                tokenString
@@ -172,13 +194,18 @@ public class TeamService {
         User targetUser = targetMembership.getUser();
         tokenRepository.deleteByUser(targetUser);
 
-        EmailVerificationToken newToken = EmailVerificationToken.builder()
-                .token(UUID.randomUUID().toString())
-                .user(targetUser)
-                .expiresAt(LocalDateTime.now().plusHours(24))
-                .build();
+        EmailVerificationToken verificationToken = tokenRepository.findByUserId(targetUser.getId())
+                .orElseGet(() -> {
+                    EmailVerificationToken t = new EmailVerificationToken();
+                    t.setUser(targetUser);
+                    return t;
+                });
 
-       EmailVerificationToken savedToken = tokenRepository.save(newToken);
+        verificationToken.setToken(UUID.randomUUID().toString());
+        verificationToken.setExpiresAt(LocalDateTime.now().plusHours(24));
+        verificationToken.setVerifiedAt(null);
+
+       EmailVerificationToken savedToken = tokenRepository.save(verificationToken);
 
         String tokenString = savedToken.getToken();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -386,6 +413,7 @@ public class TeamService {
         membership.setJoinedAt(LocalDateTime.now());
         membershipRepository.save(membership);
 
+        invitedUser.setToken(null);
         tokenRepository.delete(token);
         // Send welcome notification / email
     }

@@ -49,9 +49,6 @@ public class CreateMonitorRequest {
   private String expectedKeyword;
 
   public long getCalculatedIntervalSeconds() {
-    if (this.intervalUnit == null || this.intervalValue == null) {
-      return 60L;
-    }
     return this.intervalUnit.toSeconds(this.intervalValue);
   }
 

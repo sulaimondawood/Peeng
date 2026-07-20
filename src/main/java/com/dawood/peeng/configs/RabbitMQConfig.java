@@ -4,9 +4,12 @@ import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 @Configuration
 public class RabbitMQConfig {
@@ -163,9 +166,11 @@ public class RabbitMQConfig {
 
 
     @Bean
-    public MessageConverter simpleMessageConverter() {
-        return new Jackson2JsonMessageConverter();
+    public JacksonJsonMessageConverter simpleMessageConverter(JsonMapper jsonMapper) {
+        return new JacksonJsonMessageConverter(jsonMapper);
     }
+
+
 
     @Bean
     public RabbitTemplate rabbitTemplate(
