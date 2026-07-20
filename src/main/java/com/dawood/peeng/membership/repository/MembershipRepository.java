@@ -6,7 +6,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 import com.dawood.peeng.identity.dtos.response.TeamOverview;
+import com.dawood.peeng.identity.models.User;
 import com.dawood.peeng.membership.enums.MembershipStatus;
+import com.dawood.peeng.tenant.model.Tenant;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.dawood.peeng.membership.models.Membership;
@@ -44,5 +46,7 @@ public interface MembershipRepository extends JpaRepository<Membership, UUID> {
   TeamOverview getTeamOverview(UUID tenantId);
 
   List<Membership> findAllByTenantIdAndStatusIn(UUID tenantId, Collection<MembershipStatus> statuses);
+
+  List<Membership> findByUserIdAndStatusNot(UUID userId, MembershipStatus status);
 
 }

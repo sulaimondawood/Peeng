@@ -102,7 +102,6 @@ public class TeamService {
                 membership.setInvitedByUserId(currentLoggedInUser.getId());
                 membership.setRemovedBy(null);
                 membership.setRemovedAt(null);
-                // Role can be updated if needed
                 membership.setRole(request.role());
             }
             else {
