@@ -15,7 +15,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/workspaces")
+@RequestMapping("/workspaces")
 public class TenantController {
 
     private final TenantService tenantService;
