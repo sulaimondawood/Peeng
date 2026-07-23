@@ -19,49 +19,48 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JwtService {
 
-  @Value("${app.security.jwt}")
-  private String secretKey;
+    @Value("${app.security.jwt}")
+    private String secretKey;
 
-  private Algorithm algorithm() {
-    return Algorithm.HMAC256(secretKey);
-  }
-
-  public String generateToken(Map<String, String> claims, String sub) {
-
-    var builder = JWT.create()
-        .withIssuer("peeng")
-        .withSubject(sub)
-        .withIssuedAt(Instant.now())
-        .withExpiresAt(Instant.now().plus(1, ChronoUnit.DAYS));
-
-    if (claims != null) {
-      claims.forEach((k, v) -> {
-        builder.withClaim(k, v);
-      });
+    private Algorithm algorithm() {
+        return Algorithm.HMAC256(secretKey);
     }
 
-    return builder.sign(algorithm());
+    public String generateToken(Map<String, String> claims, String sub) {
 
-  }
+        var builder = JWT.create()
+                .withIssuer("peeng")
+                .withSubject(sub)
+                .withIssuedAt(Instant.now())
+                .withExpiresAt(Instant.now().plus(3, ChronoUnit.DAYS));
 
-  public DecodedJWT verifyToken(String token) {
+        if (claims != null) {
+            claims.forEach((k, v) -> {
+                builder.withClaim(k, v);
+            });
+        }
 
-    try {
+        return builder.sign(algorithm());
 
-      JWTVerifier verifier = JWT.require(algorithm())
-          .withIssuer("peeng")
-          .build();
-
-      return verifier.verify(token);
-    } catch (JWTVerificationException exception) {
-      log.error("Token verification failed: ", exception);
-      return null;
     }
-  }
 
-  public String extractSubject(String token) {
-    return verifyToken(token)
-        .getSubject();
-  }
+    public DecodedJWT verifyToken(String token) {
+
+        try {
+            JWTVerifier verifier = JWT.require(algorithm())
+                    .withIssuer("Peeng")
+                    .build();
+
+            return verifier.verify(token);
+        } catch (JWTVerificationException exception) {
+            log.warn("JWT verification failed: {}", exception.getMessage());
+            throw exception;
+        }
+    }
+
+    public String extractSubject(String token) {
+        return verifyToken(token)
+                .getSubject();
+    }
 
 }

@@ -4,11 +4,13 @@ import java.util.List;
 
 import com.dawood.peeng.membership.dtos.responses.MembershipSessionDTO;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class LoginResponseDTO {
 
   private String accessToken;
@@ -16,6 +18,8 @@ public class LoginResponseDTO {
   private String refreshToken;
 
   private UserSessionDTO user;
+
+  private String message;
 
   private List<MembershipSessionDTO> memberships;
 

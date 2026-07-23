@@ -35,128 +35,82 @@ import tools.jackson.databind.ObjectMapper;
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-  private final JwtService jwtService;
-  private final CustomUserDetailsService userDetailsService;
-  private final MembershipRepository membershipRepository;
+    private final JwtService jwtService;
+    private final CustomUserDetailsService userDetailsService;
+    private final MembershipRepository membershipRepository;
+    private final ObjectMapper mapper = new ObjectMapper();
 
-  @Override
-  protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-      throws ServletException, IOException {
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
-    final String authHeader = request.getHeader("Authorization");
-    String token;
-    final String tenantHeader = request.getHeader("X-Tenant-Id");
-    final ObjectMapper mapper = new ObjectMapper();
+        final String authHeader = request.getHeader("Authorization");
+        final String tenantHeader = request.getHeader("X-Tenant-Id");
 
-    if (tenantHeader == null) {
-      log.info("Tenant Id is missing");
+        if (tenantHeader == null || tenantHeader.isBlank()) {
+            sendErrorResponse( request, response, HttpStatus.BAD_REQUEST,"Missing or invalid X-Tenant-Id header");
+            return;
+        }
 
-      ApiError err = ResponseBuilder.buildError(request, response, "Missing or invalid X-Tenant-Id header",
-          HttpStatus.BAD_REQUEST, "Bad Request");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            log.info("Invalid auth header");
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-      response.setStatus(HttpStatus.BAD_REQUEST.value());
-      response.setContentType("application/json");
-      response.getWriter().write(mapper.writeValueAsString(err));
+        try {
+            String token = authHeader.substring(7);
+            String email = jwtService.extractSubject(token);
 
-      return;
-    }
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-      log.info("Invalid auth header");
-      filterChain.doFilter(request, response);
-      return;
-    }
+                UserDetails user = userDetailsService.loadUserByUsername(email);
 
-    try {
+                UUID tenantId = UUID.fromString(tenantHeader);
 
-      token = authHeader.substring(7);
+                Membership membership = membershipRepository
+                        .findByUser_EmailAndTenant_Id(email, tenantId)
+                        .orElseThrow(() -> new RuntimeException(
+                                "No active membership found for this tenant"));
 
-      String email = jwtService.extractSubject(token);
+                String role = "ROLE_" + membership.getRole().name();
 
-      if (email != null && SecurityContextHolder.getContext()
-          .getAuthentication() == null) {
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(user, null,
+                        List.of(new SimpleGrantedAuthority(role)));
 
-        UserDetails user = userDetailsService.loadUserByUsername(email);
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-        UUID tenantId = UUID.fromString(tenantHeader);
+                SecurityContextHolder.getContext().setAuthentication(authToken);
 
-        Membership membership = membershipRepository
-            .findByUser_EmailAndTenant_Id(user.getUsername(), tenantId)
-            .orElseThrow(() -> new RuntimeException(
-                "Membership not found"));
+                TenantContext.set(tenantId);
 
-        String role = "ROLE_" + membership.getRole().name();
+                filterChain.doFilter(request, response);
 
-        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(user, null,
-            List.of(new SimpleGrantedAuthority(role)));
+            }
 
-        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-        SecurityContextHolder.getContext().setAuthentication(authToken);
-
-        TenantContext.set(tenantId);
-
-        filterChain.doFilter(request, response);
-
-      }
-
-    } catch (TokenExpiredException e) {
-      log.error(e.getMessage(), e);
-
-      ApiError err = ResponseBuilder.buildError(
-          request,
-          response,
-          "Authorization token expired",
-          HttpStatus.UNAUTHORIZED,
-          "Unauthorized");
-
-      response.setStatus(HttpStatus.BAD_REQUEST.value());
-      response.setContentType("application/json");
-      response.getWriter().write(mapper.writeValueAsString(err));
-
-      return;
-
-    } catch (JWTVerificationException e) {
-      log.error(e.getMessage(), e);
-
-      ApiError err = ResponseBuilder.buildError(
-          request,
-          response,
-          "Invalid authorization token",
-          HttpStatus.UNAUTHORIZED,
-          "Unauthorized");
-
-      response.setStatus(HttpStatus.BAD_REQUEST.value());
-      response.setContentType("application/json");
-      response.getWriter().write(mapper.writeValueAsString(err));
-
-      return;
-
-    } catch (Exception e) {
-      log.error(e.getMessage(), e);
-
-      ApiError err = ResponseBuilder.buildError(
-          request,
-          response,
-          "Something went wrong",
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          "Internal Server Error");
-
-      response.setStatus(HttpStatus.BAD_REQUEST.value());
-      response.setContentType("application/json");
-      response.getWriter().write(mapper.writeValueAsString(err));
-
-      return;
-    } finally {
-      TenantContext.clear();
+        } catch (TokenExpiredException e) {
+            sendErrorResponse(request, response, HttpStatus.UNAUTHORIZED, "Authorization token has expired");
+        } catch (JWTVerificationException e) {
+            sendErrorResponse(request, response, HttpStatus.UNAUTHORIZED, "Invalid authorization token");
+        } catch (Exception e) {
+            log.error("Unexpected error during JWT authentication", e);
+            sendErrorResponse(request, response, HttpStatus.INTERNAL_SERVER_ERROR, "Authentication failed");
+        } finally {
+            TenantContext.clear();
+        }
 
     }
 
-  }
+    private void sendErrorResponse(HttpServletRequest request, HttpServletResponse response, HttpStatus status, String message) throws IOException {
+        ApiError err = ResponseBuilder.buildError(request, response, message, status, status.getReasonPhrase());
+        response.setStatus(status.value());
+        response.setContentType("application/json");
+        response.getWriter().write(mapper.writeValueAsString(err));
+    }
 
-  @Override
-  protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-    String path = request.getServletPath();
-    return path.startsWith("/auth");
-  }
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getServletPath();
+        return path.startsWith("/auth");
+    }
 }
