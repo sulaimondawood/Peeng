@@ -29,7 +29,7 @@ public class JwtService {
     public String generateToken(Map<String, String> claims, String sub) {
 
         var builder = JWT.create()
-                .withIssuer("peeng")
+                .withIssuer("Peeng")
                 .withSubject(sub)
                 .withIssuedAt(Instant.now())
                 .withExpiresAt(Instant.now().plus(3, ChronoUnit.DAYS));
