@@ -11,6 +11,7 @@ import com.dawood.peeng.notification.enums.NotificationChannel;
 import com.dawood.peeng.notification.model.NotificationChannelConfig;
 import com.dawood.peeng.notification.respository.NotificationChannelConfigRepository;
 import com.sun.security.auth.UserPrincipal;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -51,6 +52,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class IdentityService {
 
   private final UserRepository userRepository;
@@ -209,9 +211,6 @@ public class IdentityService {
       throw new EmailNotVerifiedException("Email is not verified", HttpStatus.UNAUTHORIZED, ErrorCode.ACCESS_DENIED);
     }
 
-    // List<Membership> memberships =
-    // membershipRepository.findAllByUser_Id(user.getId());
-
     List<Membership> memberships = membershipRepository
         .findAllByUser_Id(user.getId())
         .stream()
@@ -219,8 +218,30 @@ public class IdentityService {
         .filter(m -> m.getTenant().getStatus() == TenantStatus.ACTIVE)
         .toList();
 
+    Map<String, String> claims = new HashMap<>();
+    List<MembershipSessionDTO> membershipDTOs = List.of();
+
     if (memberships.isEmpty()) {
-      throw new MembershipException("User has no memberships", HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
+      log.info("User has no memberships");
+
+      if (user.getLastActiveTenantId() != null) {
+        user.setLastActiveTenantId(null);
+        userRepository.save(user);
+      }
+
+      String accessToken = jwtService.generateToken(claims, normalizedEmail);
+
+      LoginResponseDTO response = new LoginResponseDTO();
+      response.setAccessToken(accessToken);
+      response.setMemberships(membershipDTOs);
+      response.setUser(UserSessionDTO.builder()
+              .avatarUrl(user.getAvatarUrl())
+              .email(user.getEmail())
+              .emailVerified(user.isEmailVerified())
+              .name(user.getName())
+              .build());
+
+      return response;
     }
 
     UUID lastActiveTenantId = user.getLastActiveTenantId();
@@ -266,13 +287,12 @@ public class IdentityService {
     user.setLastLoginAt(LocalDateTime.now());
     userRepository.save(user);
 
-    Map<String, String> claims = new HashMap<>();
     claims.put("tenantId", lastActiveTenantId.toString());
     claims.put("role", role);
 
     String accessToken = jwtService.generateToken(claims, normalizedEmail);
 
-    List<MembershipSessionDTO> membershipDTOs = memberships.stream()
+    membershipDTOs = memberships.stream()
         .map(MembershipMapper::toSessionDTO).toList();
 
     LoginResponseDTO response = new LoginResponseDTO();
