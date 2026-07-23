@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.dawood.peeng.common.exceptions.PeengException;
+import com.dawood.peeng.identity.dtos.response.VerifyEmailResponse;
 import com.dawood.peeng.identity.exceptions.*;
 import com.dawood.peeng.notification.enums.NotificationChannel;
 import com.dawood.peeng.notification.model.NotificationChannelConfig;
@@ -138,6 +140,7 @@ public class IdentityService {
                 .build();
 
     }
+
     @Transactional
     public LoginResponseDTO login(LoginDTO payload) {
         String normalizedEmail = payload.getEmail().trim().toLowerCase();
@@ -247,6 +250,104 @@ public class IdentityService {
                 .build();
     }
 
+    public void updateName(String newName) {
+        User user = getCurrentLoggedInUser();
+        user.setName(newName.trim());
+        userRepository.save(user);
+    }
+
+    public void updatePassword(String currentPassword, String newPassword, String confirmPassword) {
+
+        if (newPassword == null || newPassword.length() < 8) {
+            throw new PeengException("New password must be at least 8 characters",
+                    HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
+        }
+
+        if (!newPassword.equals(confirmPassword)) {
+            throw new PeengException("New password and Confirm password do not match",
+                    HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
+        }
+
+        User user = getCurrentLoggedInUser();
+
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new InvalidCredentialsException("Current password is incorrect",
+                    HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public VerifyEmailResponse verifyEmail(String token) {
+        EmailVerificationToken verificationToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new PeengException("Invalid or expired verification token", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
+
+        User user = verificationToken.getUser();
+
+        if (verificationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            tokenRepository.delete(verificationToken);
+            user.setToken(null);
+            userRepository.save(user);
+
+            EmailVerificationToken newToken = createAndSendNewVerificationToken(user);
+
+            return VerifyEmailResponse.builder()
+                    .success(false)
+                    .message("This verification link has expired. A new link has been sent to your email.")
+                    .email(user.getEmail())
+                    .newTokenSent(true)
+                    .build();
+        }
+
+
+        if (!user.isEmailVerified()) {
+            user.setEmailVerified(true);
+            user.setStatus(Status.ACTIVE);
+
+            tokenRepository.delete(verificationToken);
+            user.setToken(null);
+
+            userRepository.save(user);
+        }
+
+        return VerifyEmailResponse.builder()
+                .success(true)
+                .message("Your email has been verified successfully!")
+                .email(user.getEmail())
+                .build();
+
+    }
+
+    @Transactional
+    public void resendVerificationEmail() {
+        User user = getCurrentLoggedInUser();
+
+        if (user.isEmailVerified()) {
+            throw new PeengException("Email is already verified", HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
+        }
+
+        tokenRepository.deleteByUser(user);
+
+        EmailVerificationToken newToken = EmailVerificationToken.builder()
+                .token(UUID.randomUUID().toString())
+                .user(user)
+                .expiresAt(LocalDateTime.now().plusHours(24))
+                .build();
+
+        tokenRepository.save(newToken);
+
+        SendVerificationEmailEvent event = SendVerificationEmailEvent.builder()
+                .email(user.getEmail())
+                .name(user.getName())
+                .token(newToken.getToken())
+                .build();
+
+        emailProducer.sendVerificationEmail(event);
+    }
+
+
     private boolean isTenantAccessible(TenantStatus status) {
         return status == TenantStatus.ACTIVE ||
                 status == TenantStatus.TRIALING ||
@@ -273,5 +374,26 @@ public class IdentityService {
         return userRepository.findByEmailIgnoreCase(getCurrentUserEmail())
                 .orElseThrow(() -> new UserNotFoundException("User not found", HttpStatus.NOT_FOUND, ErrorCode.USER_NOT_FOUND));
 
+    }
+
+    private EmailVerificationToken createAndSendNewVerificationToken(User user) {
+
+        EmailVerificationToken newToken = EmailVerificationToken.builder()
+                .token(UUID.randomUUID().toString())
+                .user(user)
+                .expiresAt(LocalDateTime.now().plusHours(24))
+                .build();
+
+        tokenRepository.save(newToken);
+
+        SendVerificationEmailEvent event = SendVerificationEmailEvent.builder()
+                .email(user.getEmail())
+                .name(user.getName())
+                .token(newToken.getToken())
+                .build();
+
+        emailProducer.sendVerificationEmail(event);
+
+        return newToken;
     }
 }
