@@ -347,6 +347,26 @@ public class IdentityService {
         emailProducer.sendVerificationEmail(event);
     }
 
+    private EmailVerificationToken createAndSendNewVerificationToken(User user) {
+
+        EmailVerificationToken newToken = EmailVerificationToken.builder()
+                .token(UUID.randomUUID().toString())
+                .user(user)
+                .expiresAt(LocalDateTime.now().plusHours(24))
+                .build();
+
+        tokenRepository.save(newToken);
+
+        SendVerificationEmailEvent event = SendVerificationEmailEvent.builder()
+                .email(user.getEmail())
+                .name(user.getName())
+                .token(newToken.getToken())
+                .build();
+
+        emailProducer.sendVerificationEmail(event);
+
+        return newToken;
+    }
 
     private boolean isTenantAccessible(TenantStatus status) {
         return status == TenantStatus.ACTIVE ||
@@ -376,24 +396,4 @@ public class IdentityService {
 
     }
 
-    private EmailVerificationToken createAndSendNewVerificationToken(User user) {
-
-        EmailVerificationToken newToken = EmailVerificationToken.builder()
-                .token(UUID.randomUUID().toString())
-                .user(user)
-                .expiresAt(LocalDateTime.now().plusHours(24))
-                .build();
-
-        tokenRepository.save(newToken);
-
-        SendVerificationEmailEvent event = SendVerificationEmailEvent.builder()
-                .email(user.getEmail())
-                .name(user.getName())
-                .token(newToken.getToken())
-                .build();
-
-        emailProducer.sendVerificationEmail(event);
-
-        return newToken;
-    }
 }

@@ -2,6 +2,7 @@ package com.dawood.peeng.identity.controller;
 
 import com.dawood.peeng.identity.dtos.request.UpdateNameRequest;
 import com.dawood.peeng.identity.dtos.request.UpdatePasswordRequest;
+import com.dawood.peeng.identity.dtos.response.VerifyEmailResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -58,9 +59,8 @@ public class IdentityController {
 
 
     @GetMapping("/verify-email")
-    public ResponseEntity<ApiResponse<Void>> verifyEmail(@RequestParam("token") String token) {
-        identityService.verifyEmail(token);
-        return ResponseEntity.ok(ApiResponse.success("Email verified successfully", null));
+    public ResponseEntity<ApiResponse<VerifyEmailResponse>> verifyEmail(@RequestParam("token") String token) {
+        return ResponseEntity.ok(ApiResponse.success("Email verified successfully", identityService.verifyEmail(token)));
     }
 
     @PostMapping("/resend-verification")
