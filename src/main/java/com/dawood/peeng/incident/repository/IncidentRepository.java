@@ -51,4 +51,6 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
     Optional<Incident> findByIdAndTenantId(UUID incidentId, UUID tenantId);
 
     Optional<Incident> findByIdAndTenantIdAndMonitorId(UUID incidentId, UUID tenantId, UUID monitorId);
+
+    List<Incident> findTop3ByTenantIdOrderByCreatedAtDesc(UUID tenantId);
 }
