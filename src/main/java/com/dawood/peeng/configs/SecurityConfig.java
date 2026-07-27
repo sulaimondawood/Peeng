@@ -33,7 +33,10 @@ public class SecurityConfig {
             .requestMatchers("/auth/login",
                     "/auth/register",
                     "/auth/verify-email",
-                    "/auth/forgot-password").permitAll()
+                    "/auth/forgot-password",
+                    "/members/{token}/preview-invite",
+                    "/members/accept-invite"
+                    ).permitAll()
             .anyRequest().authenticated())
         .build();
 
