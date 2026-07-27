@@ -397,4 +397,7 @@ public class IdentityService {
 
     }
 
+    public void forgotPassword(){
+        
+    }
 }
