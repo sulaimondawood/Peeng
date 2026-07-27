@@ -22,6 +22,9 @@ import com.dawood.peeng.membership.exceptions.MembershipException;
 import com.dawood.peeng.membership.mapper.MembershipMapper;
 import com.dawood.peeng.membership.models.Membership;
 import com.dawood.peeng.membership.repository.MembershipRepository;
+import com.dawood.peeng.notification.enums.NotificationChannel;
+import com.dawood.peeng.notification.model.NotificationChannelConfig;
+import com.dawood.peeng.notification.respository.NotificationChannelConfigRepository;
 import com.dawood.peeng.tenant.context.TenantContext;
 import com.dawood.peeng.tenant.exceptions.TenantException;
 import com.dawood.peeng.tenant.model.Tenant;
@@ -51,29 +54,35 @@ public class TeamService {
     private final TenantRepository tenantRepository;
     private final RabbitTemplate rabbitTemplate;
     private final PasswordEncoder passwordEncoder;
+    private final NotificationChannelConfigRepository notificationChannelConfigRepository;
 
     @Transactional
-    public void sendInvite(MemberInviteDTO request){
+    public void sendInvite(MemberInviteDTO request) {
 
         UUID tenantId = TenantContext.getTenantId();
 
         User currentLoggedInUser = identityService.getCurrentLoggedInUser();
 
-        Membership actorMembership = membershipRepository.findByUser_IdAndTenant_Id(currentLoggedInUser.getId(),tenantId)
-                .orElseThrow(()->new MembershipException(
+        Membership actorMembership = membershipRepository.findByUser_IdAndTenant_Id(currentLoggedInUser.getId(), tenantId)
+                .orElseThrow(() -> new MembershipException(
                         "You do not belong to this workspace",
                         HttpStatus.BAD_REQUEST,
                         ErrorCode.BAD_REQUEST
                 ));
 
-        if(actorMembership.getRole() != RoleType.OWNER && actorMembership.getRole() !=RoleType.ADMIN){
+        if (actorMembership.getRole() != RoleType.OWNER && actorMembership.getRole() != RoleType.ADMIN) {
             throw new UnauthorizedException(
                     "You're not authorized to perform this action",
                     HttpStatus.UNAUTHORIZED,
                     ErrorCode.UNAUTHORIZED);
         }
 
-        User targetUser = userRepository.findByEmailIgnoreCase(request.email()).orElseGet(()->{
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new TenantException(
+                        "Workspace does not exist",
+                        HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
+
+        User targetUser = userRepository.findByEmailIgnoreCase(request.email()).orElseGet(() -> {
             User newUser = new User();
             newUser.setStatus(Status.ACTIVE);
             newUser.setEmail(request.email());
@@ -95,28 +104,19 @@ public class TeamService {
                 throw new MembershipException(
                         "User is already a member of this workspace",
                         HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
-            }
-            else if (membership.getStatus() == MembershipStatus.REMOVED) {
-                // Re-invite removed user
+            } else if (membership.getStatus() == MembershipStatus.REMOVED) {
+
                 membership.setStatus(MembershipStatus.INVITED);
                 membership.setInvitedByUserId(currentLoggedInUser.getId());
                 membership.setRemovedBy(null);
                 membership.setRemovedAt(null);
                 membership.setRole(request.role());
-            }
-            else {
-                // Already invited
+            } else {
                 throw new MembershipException(
                         "User is already invited to this workspace",
                         HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
             }
         } else {
-
-            Tenant tenant = tenantRepository.findById(tenantId)
-                    .orElseThrow(() -> new TenantException(
-                            "Workspace does not exist",
-                            HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
-
             membership = new Membership();
             membership.setUser(targetUser);
             membership.setRole(request.role());
@@ -127,12 +127,18 @@ public class TeamService {
 
         membershipRepository.save(membership);
 
+        EmailVerificationToken token = tokenRepository.findByUserId(targetUser.getId())
+                .orElseGet(() -> {
+                    EmailVerificationToken t = new EmailVerificationToken();
+                    t.setUser(targetUser);
+                    return t;
+                });
 
-        EmailVerificationToken token = EmailVerificationToken.builder()
-                .token(UUID.randomUUID().toString())
-                .user(targetUser)
-                .expiresAt(LocalDateTime.now().plusHours(24))
-                .build();
+        token.setToken(UUID.randomUUID().toString());
+        token.setTenant(tenant);
+        token.setExpiresAt(LocalDateTime.now().plusHours(48));
+        token.setVerifiedAt(null);
+
         EmailVerificationToken savedToken = tokenRepository.save(token);
 
         String tokenString = savedToken.getToken();
@@ -143,29 +149,28 @@ public class TeamService {
                         RabbitMQConfig.EXCHANGE,
                         RabbitMQConfig.EMAIL_INVITATION_ROUTING_KEY,
                         new MemberInviteEvent(
-                                membership.getTenant().getWorkspaceName(),
+                                tenant.getWorkspaceName(),
                                 currentLoggedInUser.getName(),
                                 request.email(),
-                               tokenString
+                                tokenString
                         )
-                        );
+                );
             }
         });
     }
-
     @Transactional
-    public void resendInvite(UUID memberId){
+    public void resendInvite(UUID memberId) {
 
         User user = identityService.getCurrentLoggedInUser();
         UUID tenantId = TenantContext.getTenantId();
-        Membership currentUsermembership = membershipRepository.findByUser_IdAndTenant_Id(user.getId(),tenantId)
-                .orElseThrow(()->new MembershipException(
+        Membership currentUsermembership = membershipRepository.findByUser_IdAndTenant_Id(user.getId(), tenantId)
+                .orElseThrow(() -> new MembershipException(
                         "You do not belong to this workspace",
                         HttpStatus.BAD_REQUEST,
                         ErrorCode.BAD_REQUEST
                 ));
 
-        if(currentUsermembership.getRole() != RoleType.OWNER && currentUsermembership.getRole() !=RoleType.ADMIN){
+        if (currentUsermembership.getRole() != RoleType.OWNER && currentUsermembership.getRole() != RoleType.ADMIN) {
             throw new UnauthorizedException(
                     "You're not authorized to perform this action",
                     HttpStatus.UNAUTHORIZED,
@@ -173,8 +178,8 @@ public class TeamService {
         }
 
         Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(()->new TenantException(
-                        "Workspace does not exists",
+                .orElseThrow(() -> new TenantException(
+                        "Workspace does not exist",
                         HttpStatus.NOT_FOUND,
                         ErrorCode.NOT_FOUND
                 ));
@@ -183,7 +188,7 @@ public class TeamService {
                 .orElseThrow(() -> new MembershipException(
                         "Invitation not found",
                         HttpStatus.NOT_FOUND,
-                        ErrorCode.NOT_FOUND ));
+                        ErrorCode.NOT_FOUND));
 
         if (targetMembership.getStatus() != MembershipStatus.INVITED) {
             throw new MembershipException("Can only resend invitation for pending invites",
@@ -191,7 +196,6 @@ public class TeamService {
         }
 
         User targetUser = targetMembership.getUser();
-        tokenRepository.deleteByUser(targetUser);
 
         EmailVerificationToken verificationToken = tokenRepository.findByUserId(targetUser.getId())
                 .orElseGet(() -> {
@@ -201,10 +205,11 @@ public class TeamService {
                 });
 
         verificationToken.setToken(UUID.randomUUID().toString());
-        verificationToken.setExpiresAt(LocalDateTime.now().plusHours(24));
+        verificationToken.setTenant(tenant);
+        verificationToken.setExpiresAt(LocalDateTime.now().plusHours(48));
         verificationToken.setVerifiedAt(null);
 
-       EmailVerificationToken savedToken = tokenRepository.save(verificationToken);
+        EmailVerificationToken savedToken = tokenRepository.save(verificationToken);
 
         String tokenString = savedToken.getToken();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -222,9 +227,7 @@ public class TeamService {
                 );
             }
         });
-
     }
-
     @Transactional
     public void deleteMember(UUID memberId){
 
@@ -347,9 +350,10 @@ public class TeamService {
         }
 
         User invitedUser = token.getUser();
+
         Membership membership = membershipRepository.findByUser_IdAndTenant_Id(
                         invitedUser.getId(),
-                        invitedUser.getLastActiveTenantId())
+                        token.getTenant().getId())
                 .orElseThrow(() -> new MembershipException(
                         "Invitation not found",
                         HttpStatus.NOT_FOUND,
@@ -365,10 +369,11 @@ public class TeamService {
         );
     }
 
+
     @Transactional
     public void completeRegistrationAndAcceptInvite(CompleteInviteRegistrationDTO request) {
 
-        EmailVerificationToken token = tokenRepository.findByToken(request.token())
+        EmailVerificationToken token = tokenRepository.findByToken(request.token().trim())
                 .orElseThrow(() -> new BadRequestException(
                         "Invalid or expired invitation link",
                         HttpStatus.BAD_REQUEST,
@@ -378,44 +383,143 @@ public class TeamService {
             throw new BadRequestException(
                     "This invitation link has expired",
                     HttpStatus.BAD_REQUEST,
-                    ErrorCode.BAD_REQUEST
-                    );
+                    ErrorCode.BAD_REQUEST);
         }
 
         User invitedUser = token.getUser();
+
+        UUID targetTenantId = token.getTenant() != null
+                ? token.getTenant().getId()
+                : invitedUser.getLastActiveTenantId();
+
+        if (targetTenantId == null) {
+            throw new MembershipException(
+                    "Invitation not found",
+                    HttpStatus.NOT_FOUND,
+                    ErrorCode.NOT_FOUND);
+        }
+
         Membership membership = membershipRepository.findByUser_IdAndTenant_Id(
                         invitedUser.getId(),
-                        invitedUser.getLastActiveTenantId())
+                        targetTenantId)
                 .orElseThrow(() -> new MembershipException(
                         "Invitation not found",
                         HttpStatus.NOT_FOUND,
-                        ErrorCode.NOT_FOUND
-                        ));
+                        ErrorCode.NOT_FOUND));
 
         if (membership.getStatus() != MembershipStatus.INVITED) {
             throw new MembershipException(
-                    "This invitation has already been processed",
+                    "This invitation has already been accepted or processed",
                     HttpStatus.BAD_REQUEST,
-                    ErrorCode.BAD_REQUEST
-                    );
+                    ErrorCode.BAD_REQUEST);
         }
 
-        invitedUser.setName(request.name());
-        invitedUser.setPasswordHash(passwordEncoder.encode(request.password()));
-        invitedUser.setStatus(Status.ACTIVE);
-        invitedUser.setEmailVerified(true);
-        invitedUser.setLastActiveTenantId(membership.getTenant().getId());
+        boolean isAlreadyRegistered = invitedUser.isEmailVerified() && invitedUser.getPasswordHash() != null;
+
+        if (!isAlreadyRegistered) {
+            if (request.name() == null || request.name().isBlank()) {
+                throw new BadRequestException(
+                        "Name is required for account setup",
+                        HttpStatus.BAD_REQUEST,
+                        ErrorCode.BAD_REQUEST);
+            }
+            if (request.password() == null || request.password().isBlank()) {
+                throw new BadRequestException(
+                        "Password is required for account setup",
+                        HttpStatus.BAD_REQUEST,
+                        ErrorCode.BAD_REQUEST);
+            }
+
+            invitedUser.setName(request.name().trim());
+            invitedUser.setPasswordHash(passwordEncoder.encode(request.password()));
+            invitedUser.setStatus(Status.ACTIVE);
+            invitedUser.setEmailVerified(true);
+        } else {
+            if (request.name() != null && !request.name().isBlank()) {
+                invitedUser.setName(request.name().trim());
+            }
+        }
+
+        Tenant targetTenant = membership.getTenant();
+        invitedUser.setLastActiveTenantId(targetTenant.getId());
         invitedUser.setLastLoginAt(LocalDateTime.now());
+
+        invitedUser.setToken(null);
         userRepository.save(invitedUser);
 
         membership.setStatus(MembershipStatus.ACTIVE);
         membership.setJoinedAt(LocalDateTime.now());
         membershipRepository.save(membership);
 
-        invitedUser.setToken(null);
+        // 4. Provision default notification channel for escalation if not already present
+        boolean channelExists = notificationChannelConfigRepository.existsByTenantIdAndChannelAndDestination(targetTenant.getId(), NotificationChannel.EMAIL, invitedUser.getEmail());
+
+        if (!channelExists) {
+            NotificationChannelConfig channelConfig = NotificationChannelConfig.builder()
+                    .tenant(targetTenant)
+                    .channel(NotificationChannel.EMAIL)
+                    .destination(invitedUser.getEmail())
+                    .enabled(true)
+                    .build();
+
+            notificationChannelConfigRepository.save(channelConfig);
+        }
+
+
         tokenRepository.delete(token);
-        // Send welcome notification / email
     }
+
+//    @Transactional
+//    public void completeRegistrationAndAcceptInvite(CompleteInviteRegistrationDTO request) {
+//
+//        EmailVerificationToken token = tokenRepository.findByToken(request.token())
+//                .orElseThrow(() -> new BadRequestException(
+//                        "Invalid or expired invitation link",
+//                        HttpStatus.BAD_REQUEST,
+//                        ErrorCode.BAD_REQUEST));
+//
+//        if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
+//            throw new BadRequestException(
+//                    "This invitation link has expired",
+//                    HttpStatus.BAD_REQUEST,
+//                    ErrorCode.BAD_REQUEST
+//                    );
+//        }
+//
+//        User invitedUser = token.getUser();
+//        Membership membership = membershipRepository.findByUser_IdAndTenant_Id(
+//                        invitedUser.getId(),
+//                        invitedUser.getLastActiveTenantId())
+//                .orElseThrow(() -> new MembershipException(
+//                        "Invitation not found",
+//                        HttpStatus.NOT_FOUND,
+//                        ErrorCode.NOT_FOUND
+//                        ));
+//
+//        if (membership.getStatus() != MembershipStatus.INVITED) {
+//            throw new MembershipException(
+//                    "This invitation has already been processed",
+//                    HttpStatus.BAD_REQUEST,
+//                    ErrorCode.BAD_REQUEST
+//                    );
+//        }
+//
+//        invitedUser.setName(request.name());
+//        invitedUser.setPasswordHash(passwordEncoder.encode(request.password()));
+//        invitedUser.setStatus(Status.ACTIVE);
+//        invitedUser.setEmailVerified(true);
+//        invitedUser.setLastActiveTenantId(membership.getTenant().getId());
+//        invitedUser.setLastLoginAt(LocalDateTime.now());
+//        userRepository.save(invitedUser);
+//
+//        membership.setStatus(MembershipStatus.ACTIVE);
+//        membership.setJoinedAt(LocalDateTime.now());
+//        membershipRepository.save(membership);
+//
+//        invitedUser.setToken(null);
+//        tokenRepository.delete(token);
+//        // Send welcome notification / email
+//    }
 
     public TeamOverview teamMemberOverview(){
         TeamOverview overview = membershipRepository.getTeamOverview(TenantContext.getTenantId());

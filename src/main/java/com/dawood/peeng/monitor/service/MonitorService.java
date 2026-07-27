@@ -107,17 +107,11 @@ public class MonitorService {
 
     public Page<Monitor> getAllMonitors(MonitorStatus statusStr, String keyword, int pageNo, int pageSize) {
 
-        MonitorStatus status = null;
-
-        if (statusStr != null && (statusStr.name().trim().equalsIgnoreCase("ALL"))) {
-            status = statusStr;
-        }
-
         Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
         UUID tenantId = TenantContext.getTenantId();
 
-        return monitorRepository.findAllMonitors(tenantId, status, keyword, pageable);
+        return monitorRepository.findAllMonitors(tenantId, statusStr, keyword, pageable);
 
     }
 

@@ -1,23 +1,25 @@
 package com.dawood.peeng.incident.events;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
 @Getter
+@NoArgsConstructor
 public class IncidentAssignedEvent {
 
-    private final UUID incidentAssignedId;
+    private UUID incidentAssignedId;
 
-    private final UUID monitorId;
+    private UUID monitorId;
 
-    private final String assigner;
+    private String assigner;
 
-    private final String assignee;
+    private String assignee;
 
-    private final UUID tenantId;
+    private UUID tenantId;
 
-    private final String email;
+    private String email;
 
     public IncidentAssignedEvent(UUID incidentAssignedId, UUID monitorId, UUID tenantId, String assigner, String assignee, String email){
         this.incidentAssignedId = incidentAssignedId;

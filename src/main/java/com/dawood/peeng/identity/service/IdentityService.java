@@ -244,6 +244,7 @@ public class IdentityService {
                         .emailVerified(user.isEmailVerified())
                         .name(user.getName())
                         .build())
+                .lastTenantId(user.getLastActiveTenantId())
                 .message(activeMemberships.isEmpty()
                         ? "Login successful. You currently have no active workspaces."
                         : null)

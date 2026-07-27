@@ -3,12 +3,10 @@ package com.dawood.peeng.configs;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 @Configuration
@@ -89,11 +87,8 @@ public class RabbitMQConfig {
                 .build();
     }
 
-
-
     @Bean
     public Queue incidentResolvedQueue() {
-
         return  QueueBuilder.durable(INCIDENT_CLOSED_QUEUE)
                 .deadLetterExchange(DLX_EXCHANGE)
                 .deadLetterRoutingKey(DLX_ROUTING_KEY)
@@ -158,6 +153,7 @@ public class RabbitMQConfig {
                 .build();
     }
 
+    @Bean
     public Binding incidentAssignedBinding(TopicExchange topicExchange, Queue incidentAssignedQueue){
         return BindingBuilder.bind(incidentAssignedQueue)
                 .to(topicExchange)

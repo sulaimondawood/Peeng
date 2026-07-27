@@ -29,6 +29,7 @@ import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.monitor.service.MonitorService;
 import com.dawood.peeng.tenant.context.TenantContext;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,6 +39,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
@@ -48,6 +50,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class IncidentService {
 
     private final IncidentRepository incidentRepository;
@@ -305,6 +308,7 @@ public class IncidentService {
 
     }
 
+    @Transactional
     public void assignTeamMemberToIncident(UUID incidentId, UUID memberId) {
 
         UUID tenantId = TenantContext.getTenantId();
@@ -329,6 +333,7 @@ public class IncidentService {
                     ErrorCode.UNAUTHORIZED
             );
         }
+
         assignTeamMember(tenantId, incidentId, assignee, assigner);
 
     }

@@ -1,6 +1,7 @@
 package com.dawood.peeng.monitor.dtos.responses;
 
 import com.dawood.peeng.monitor.enums.MonitorHttpType;
+import com.dawood.peeng.monitor.enums.MonitorLifecycleStatus;
 import com.dawood.peeng.monitor.enums.MonitorStatus;
 import com.dawood.peeng.monitor.enums.MonitorType;
 import lombok.*;
@@ -33,6 +34,10 @@ public class MonitorResponseDTO {
     private LocalDateTime nextCheckAt;
 
     private Long timeoutInSeconds;
+
+    private Long latestResponseTimeMs;
+
+    private MonitorLifecycleStatus lifecycle;
 
 
 }

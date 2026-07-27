@@ -20,7 +20,7 @@ public class MembershipService {
 
         UUID tenantId = TenantContext.getTenantId();
 
-        return membershipRepository.findByTenantIdAndStatus(tenantId, MembershipStatus.ACTIVE)
+        return membershipRepository.findAllByTenantIdAndStatusIn(tenantId, List.of(MembershipStatus.ACTIVE))
                 .stream()
                 .map(membership -> new MembershipResponseDTO(membership.getId(), membership.getUser().getName())
                 )

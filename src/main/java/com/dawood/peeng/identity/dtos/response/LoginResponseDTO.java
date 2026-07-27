@@ -1,6 +1,7 @@
 package com.dawood.peeng.identity.dtos.response;
 
 import java.util.List;
+import java.util.UUID;
 
 import com.dawood.peeng.membership.dtos.responses.MembershipSessionDTO;
 
@@ -20,6 +21,8 @@ public class LoginResponseDTO {
   private UserSessionDTO user;
 
   private String message;
+
+  private UUID lastTenantId;
 
   private List<MembershipSessionDTO> memberships;
 

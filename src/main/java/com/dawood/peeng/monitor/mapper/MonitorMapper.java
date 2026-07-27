@@ -16,6 +16,8 @@ public class MonitorMapper {
                 .intervalInSeconds(monitor.getIntervalInSeconds())
                 .nextCheckAt(monitor.getNextCheckAt())
                 .timeoutInSeconds(monitor.getTimeoutInSeconds())
+                .latestResponseTimeMs(monitor.getLatestResponseTimeMs())
+                .lifecycle(monitor.getLifecycle())
                 .build();
 
     }

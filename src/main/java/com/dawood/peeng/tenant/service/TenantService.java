@@ -16,6 +16,7 @@ import com.dawood.peeng.tenant.model.Tenant;
 import com.dawood.peeng.tenant.repository.TenantRepository;
 import com.dawood.peeng.utils.SlugUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TenantService {
 
     private  final TenantRepository tenantRepository;
@@ -55,7 +57,7 @@ public class TenantService {
         owner.setLastActiveTenantId(savedTenant.getId());
         userRepository.save(owner);
 
-        return TenantMapper.toTenantSessionDTO(savedTenant);
+        return TenantMapper.toTenantSessionDTO(newMembership);
 
     }
 
@@ -111,6 +113,8 @@ public class TenantService {
         currentUser.setLastActiveTenantId(targetTenantId);
         userRepository.save(currentUser);
 
-        return TenantMapper.toTenantSessionDTO(membership.getTenant());
+        log.info(targetTenantId.toString());
+
+        return TenantMapper.toTenantSessionDTO(membership);
     }
 }

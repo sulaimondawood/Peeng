@@ -10,6 +10,7 @@ public class TenantMapper {
                 .id(tenant.getId())
                 .slug(tenant.getSlug())
                 .workspaceName(tenant.getWorkspaceName())
+                .tenantId(tenant.getId())
                 .build();
     }
 
@@ -18,6 +19,8 @@ public class TenantMapper {
                 .id(membership.getTenant().getId())
                 .slug(membership.getTenant().getSlug())
                 .workspaceName(membership.getTenant().getWorkspaceName())
+                .role(membership.getRole())
+                .tenantId(membership.getTenant().getId())
                 .build();
     }
 }

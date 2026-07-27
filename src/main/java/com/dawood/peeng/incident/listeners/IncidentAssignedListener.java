@@ -16,7 +16,7 @@ public class IncidentAssignedListener {
     public void sendAssignmentNotification(IncidentAssignedEvent event){
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.EXCHANGE,
-                RabbitMQConfig.INCIDENT_OPENED_ROUTING_KEY,
+                RabbitMQConfig.INCIDENT_ASSIGNED_TO_MEMBER_ROUTING_KEY,
                 event);
 
     }

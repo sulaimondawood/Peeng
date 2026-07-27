@@ -24,6 +24,8 @@ public class IncidentMapper {
                 .resolvedStatusCode(incident.getResolvedStatusCode())
                 .durationSeconds(incident.getDurationSeconds())
                 .monitor(monitorDTO)
+                .startedAt(incident.getStartedAt())
+                .severity(incident.getSeverity())
                 .build();
     }
 

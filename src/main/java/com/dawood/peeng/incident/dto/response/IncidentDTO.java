@@ -1,9 +1,11 @@
 package com.dawood.peeng.incident.dto.response;
 
 import com.dawood.peeng.incident.enums.IncidentStatus;
+import com.dawood.peeng.incident.enums.Severity;
 import com.dawood.peeng.monitor.dtos.responses.MonitorResponseDTO;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -26,4 +28,9 @@ public class IncidentDTO {
 
     private MonitorResponseDTO monitor;
 
+    private Severity severity;
+
+    private LocalDateTime startedAt;
+
+    
 }

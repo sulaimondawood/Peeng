@@ -12,6 +12,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
@@ -60,6 +61,7 @@ public class EmailConsumer {
 
     }
 
+    @Transactional(readOnly = true)
     @RabbitListener(queues = RabbitMQConfig.INCIDENT_ASSIGNED_TO_QUEUE)
     public void consumeIncidentAssignedNotification(IncidentAssignedEvent event) {
 
