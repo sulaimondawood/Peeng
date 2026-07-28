@@ -10,7 +10,6 @@ import com.dawood.peeng.incident.repository.IncidentActivityRepository;
 import com.dawood.peeng.incident.repository.IncidentRepository;
 import com.dawood.peeng.monitor.dtos.responses.MonitorResponseDTO;
 import com.dawood.peeng.monitor.mapper.MonitorMapper;
-import com.dawood.peeng.monitor.models.Monitor;
 import com.dawood.peeng.monitor.repository.MonitorRepository;
 import com.dawood.peeng.tenant.context.TenantContext;
 import lombok.RequiredArgsConstructor;
