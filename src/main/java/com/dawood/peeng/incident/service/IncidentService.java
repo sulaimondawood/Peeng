@@ -329,8 +329,8 @@ public class IncidentService {
             }
             throw new UnauthorizedException(
                     "You're not authorized to assign member to incident",
-                    HttpStatus.UNAUTHORIZED,
-                    ErrorCode.UNAUTHORIZED
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.FORBIDDEN
             );
         }
 

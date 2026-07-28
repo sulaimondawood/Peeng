@@ -195,7 +195,7 @@ public class IdentityService {
 
         if (!user.isEmailVerified()) {
             throw new EmailNotVerifiedException("Email is not verified",
-                    HttpStatus.UNAUTHORIZED, ErrorCode.ACCESS_DENIED);
+                    HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED);
         }
 
         List<Membership> activeMemberships = membershipRepository.findAllByUser_Id(user.getId()).stream()

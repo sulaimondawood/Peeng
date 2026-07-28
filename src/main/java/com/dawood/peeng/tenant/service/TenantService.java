@@ -82,31 +82,31 @@ public class TenantService {
         Membership membership = membershipRepository.findByUser_IdAndTenant_Id(currentUser.getId(), targetTenantId)
                 .orElseThrow(() -> new UnauthorizedException(
                         "You do not have access to this workspace",
-                        HttpStatus.UNAUTHORIZED,
-                        ErrorCode.UNAUTHORIZED
+                        HttpStatus.FORBIDDEN,
+                        ErrorCode.FORBIDDEN
                 ));
 
         if (membership.getStatus() == MembershipStatus.REMOVED) {
             throw new UnauthorizedException(
                     "Your access to this workspace has been revoked",
-                    HttpStatus.UNAUTHORIZED,
-                    ErrorCode.UNAUTHORIZED
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.FORBIDDEN
             );
         }
 
         if (membership.getStatus() == MembershipStatus.INVITED) {
             throw new UnauthorizedException(
                     "Please accept the invitation before switching to this workspace",
-                    HttpStatus.UNAUTHORIZED,
-                    ErrorCode.UNAUTHORIZED
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.FORBIDDEN
             );
         }
 
         if (membership.getStatus() == MembershipStatus.SUSPENDED) {
             throw new UnauthorizedException(
                     "Your account has been suspended in this workspace. Please contact the administrator.",
-                    HttpStatus.UNAUTHORIZED,
-                    ErrorCode.UNAUTHORIZED
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.FORBIDDEN
             );
         }
 
