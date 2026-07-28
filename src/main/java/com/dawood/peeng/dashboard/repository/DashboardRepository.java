@@ -17,6 +17,7 @@ public interface DashboardRepository extends JpaRepository<Monitor, UUID> {
         CAST(ROUND(AVG(m.latestResponseTimeMs), 2) AS double)
     ) FROM Monitor m
     WHERE m.tenant.id=:tenantId
+    AND m.lifecycle != 'DELETED'
 """)
     MonitorStatsProjection getMonitorStats(UUID tenantId);
 }
