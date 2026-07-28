@@ -138,7 +138,8 @@ public class MonitorService {
 
         User currentUser = identityService.getCurrentLoggedInUser();
 
-        Monitor existingMonitor = monitorRepository.findByIdAndTenantId(monitorId, tenantId)
+        Monitor existingMonitor = monitorRepository
+                .findByIdAndTenantIdAndLifecycleNot(monitorId, tenantId, MonitorLifecycleStatus.DELETED)
                 .orElseThrow(() -> new MonitorNotFoundException("Monitor not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
 
         Membership membership = membershipRepository.findByUser_IdAndTenant_Id(currentUser.getId(), tenantId)
@@ -176,7 +177,8 @@ public class MonitorService {
 
         User currentUser = identityService.getCurrentLoggedInUser();
 
-        Monitor existingMonitor = monitorRepository.findByIdAndTenantId(monitorId, tenantId)
+        Monitor existingMonitor = monitorRepository
+                .findByIdAndTenantIdAndLifecycleNot(monitorId, tenantId, MonitorLifecycleStatus.DELETED)
                 .orElseThrow(() -> new MonitorNotFoundException("Monitor not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
 
         Membership membership = membershipRepository.findByUser_IdAndTenant_Id(currentUser.getId(), tenantId)
@@ -216,7 +218,8 @@ public class MonitorService {
     public MonitorResponseDTO getMonitorDetails(UUID monitorId) {
         UUID tenantId = TenantContext.getTenantId();
 
-        Monitor existingMonitor = monitorRepository.findByIdAndTenantId(monitorId, tenantId)
+        Monitor existingMonitor = monitorRepository
+                .findByIdAndTenantIdAndLifecycleNot(monitorId, tenantId, MonitorLifecycleStatus.DELETED)
                 .orElseThrow(() -> new MonitorNotFoundException("Monitor not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
 
         return MonitorMapper.toDTO(existingMonitor);
@@ -225,7 +228,8 @@ public class MonitorService {
     public MonitorStatsProjection getMonitorStatistics(UUID monitorId) {
         UUID tenantId = TenantContext.getTenantId();
 
-        monitorRepository.findByIdAndTenantId(monitorId, tenantId)
+      monitorRepository
+                .findByIdAndTenantIdAndLifecycleNot(monitorId, tenantId, MonitorLifecycleStatus.DELETED)
                 .orElseThrow(() -> new MonitorNotFoundException("Monitor not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
 
         return monitorCheckRepository.getStatistics(tenantId, monitorId).orElseGet(() -> new MonitorStatsProjection(
@@ -243,11 +247,8 @@ public class MonitorService {
 
         final UUID tenantId = TenantContext.getTenantId();
 
-        monitorRepository.findByIdAndTenantId(monitorId, tenantId)
-                .orElseThrow(() -> new MonitorNotFoundException(
-                        "Monitor not found",
-                        HttpStatus.NOT_FOUND,
-                        ErrorCode.NOT_FOUND));
+       monitorRepository.findByIdAndTenantIdAndLifecycleNot(monitorId, tenantId, MonitorLifecycleStatus.DELETED)
+                .orElseThrow(() -> new MonitorNotFoundException("Monitor not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
 
         TimeRange range = TimeRange.fromString(rangeStr);
 
@@ -255,7 +256,6 @@ public class MonitorService {
         LocalDateTime from = range.getFromTimestamp(to);
 
         return range.executeQuery(monitorCheckRepository, tenantId, monitorId, from, to);
-
 
     }
 
@@ -287,11 +287,9 @@ public class MonitorService {
     }
 
     public Monitor validateMonitorAccess(UUID monitorId, UUID tenantId){
-      return  monitorRepository.findByIdAndTenantId(monitorId, tenantId)
-                .orElseThrow(() -> new MonitorNotFoundException(
-                        "Monitor not found",
-                        HttpStatus.NOT_FOUND,
-                        ErrorCode.NOT_FOUND));
+      return monitorRepository
+                .findByIdAndTenantIdAndLifecycleNot(monitorId, tenantId, MonitorLifecycleStatus.DELETED)
+                .orElseThrow(() -> new MonitorNotFoundException("Monitor not found", HttpStatus.NOT_FOUND, ErrorCode.NOT_FOUND));
 
     }
 }

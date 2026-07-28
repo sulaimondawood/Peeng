@@ -21,13 +21,14 @@ public interface MonitorRepository extends JpaRepository<Monitor, UUID> {
 
   List<Monitor> findAllByLifecycleAndNextCheckAtLessThanEqual(MonitorLifecycleStatus status, LocalDateTime time);
 
-  Optional<Monitor> findByIdAndTenantId(UUID monitorId, UUID tenantId);
+  Optional<Monitor> findByIdAndTenantIdAndLifecycleNot(UUID monitorId, UUID tenantId, MonitorLifecycleStatus lifecycle);
 
 
   @Query("""
     SELECT m FROM Monitor m
     WHERE m.tenant.id = :tenantId
-    AND (:status IS NULL OR m.status =:status)
+    AND m.lifecycle != 'DELETED'
+    AND (:status IS NULL OR m.status = :status)
     AND (:keyword IS NULL
     OR LOWER(m.name) like LOWER(CONCAT('%',:keyword,'%'))
     OR LOWER(m.url) LIKE LOWER(CONCAT('%', :keyword, '%'))
