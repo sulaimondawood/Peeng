@@ -14,7 +14,7 @@ public interface DashboardRepository extends JpaRepository<Monitor, UUID> {
         COUNT(m),
         SUM(CASE WHEN m.status='DOWN' THEN 1 ELSE 0 END),
         SUM(CASE WHEN m.incidentOpen THEN 1 ELSE 0 END),
-        AVG(m.latestResponseTimeMs)
+        CAST(ROUND(AVG(m.latestResponseTimeMs), 2) AS double)
     ) FROM Monitor m
     WHERE m.tenant.id=:tenantId
 """)

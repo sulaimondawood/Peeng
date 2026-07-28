@@ -1,6 +1,7 @@
 package com.dawood.peeng.monitor.service;
 
 import com.dawood.peeng.common.enums.ErrorCode;
+import com.dawood.peeng.common.exceptions.BadRequestException;
 import com.dawood.peeng.identity.enums.RoleType;
 import com.dawood.peeng.identity.exceptions.UnauthorizedException;
 import com.dawood.peeng.identity.exceptions.UserNotFoundException;
@@ -61,16 +62,28 @@ public class MonitorService {
 
         long intervalInSeconds = payload.getCalculatedIntervalSeconds();
 
-        if (intervalInSeconds < 30) {
-            throw new IllegalArgumentException("Invalid monitor interval. Monitor interval cannot be less than 30 seconds");
+        if (intervalInSeconds < 60) {
+            throw new BadRequestException(
+                    "Monitor interval cannot be less than 60 seconds",
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.BAD_REQUEST
+            );
         }
 
         if (payload.getTimeoutSeconds() < 2) {
-            throw new IllegalArgumentException("Monitor timeout cannot be less than 2 seconds");
+            throw new BadRequestException(
+                    "Monitor timeout cannot be less than 2 seconds",
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.BAD_REQUEST
+            );
         }
 
         if (payload.getTimeoutSeconds() >= intervalInSeconds) {
-            throw new IllegalArgumentException("Monitor timeout must be shorter than the monitor interval");
+            throw new BadRequestException(
+                    "Monitor timeout must be shorter than the monitor interval",
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.BAD_REQUEST
+            );
         }
 
         UUID tenantId = TenantContext.getTenantId();

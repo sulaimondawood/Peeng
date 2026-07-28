@@ -27,12 +27,12 @@ public class CreateMonitorRequest {
   private MonitorHttpType method = MonitorHttpType.GET;
   private MonitorType monitorType = MonitorType.HTTP;
 
-  @Min(value = 10, message = "Interval value cannot be less than 10 seconds")
+  @Min(value = 1)
   private Long intervalValue = 60L;
 
   private TimeUnit intervalUnit = TimeUnit.SECONDS;
 
-  @Min(value = 1, message = "Timeout can not be below 1sec")
+  @Min(value = 2, message = "Timeout can not be below 2 secs")
   @Max(value = 15, message = "Timeout can not be more than 15secs")
   private Long timeoutSeconds = 5L;
 
