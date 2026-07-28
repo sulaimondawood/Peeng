@@ -27,13 +27,22 @@ public class SchedulerService {
         List<Monitor> dueMonitors = monitorRepository
                 .findAllByLifecycleAndNextCheckAtLessThanEqual(MonitorLifecycleStatus.ACTIVE, LocalDateTime.now());
 
+        if (dueMonitors.isEmpty()) {
+            return;
+        }
+
         dueMonitors.forEach((monitor) -> {
+            monitor.setNextCheckAt(
+                    LocalDateTime.now().plusSeconds(monitor.getIntervalInSeconds())
+            );
             MonitorTaskMessage message = new MonitorTaskMessage();
             message.setMonitorId(monitor.getId());
             message.setTenantId(monitor.getTenant().getId());
 
             monitorWorkerProducer.sendScheduledMonitor(message);
         });
+
+        monitorRepository.saveAll(dueMonitors);
 
     }
 
