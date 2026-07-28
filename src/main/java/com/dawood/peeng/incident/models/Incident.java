@@ -50,7 +50,7 @@ public class Incident extends MetaData {
 
     private Long durationSeconds;
 
-    @Column(length = 2000)
+    @Column(columnDefinition = "TEXT")
     private String latestErrorMessage;
 
     private Integer failureCount;
