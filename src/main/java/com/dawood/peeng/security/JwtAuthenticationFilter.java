@@ -47,14 +47,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String authHeader = request.getHeader("Authorization");
         final String tenantHeader = request.getHeader("X-Tenant-Id");
 
-        if (tenantHeader == null || tenantHeader.isBlank()) {
-            sendErrorResponse( request, response, HttpStatus.BAD_REQUEST,"Missing or invalid X-Tenant-Id header");
-            return;
-        }
-
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             log.info("Invalid auth header");
             filterChain.doFilter(request, response);
+            return;
+        }
+
+        if (tenantHeader == null || tenantHeader.isBlank()) {
+            sendErrorResponse( request, response, HttpStatus.BAD_REQUEST,"Missing or invalid X-Tenant-Id header");
             return;
         }
 
@@ -110,11 +110,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        String path = request.getServletPath();
-//        return path.startsWith("/auth");
-        return path.equals("/auth/login")
-                || path.equals("/auth/register")
-                || path.equals("/auth/verify-email")
-                || path.equals("/auth/forgot-password");
+        return isPublic(request.getServletPath());
+    }
+
+    private boolean isPublic(String path) {
+        return path.equals("/api/v1/auth/login")
+                || path.equals("/api/v1/auth/register")
+                || path.equals("/api/v1/auth/verify-email")
+                || path.equals("/api/v1/auth/forgot-password")
+                || path.equals("/api/v1/auth/reset-password")
+                || path.equals("/api/v1/members/accept-invite")
+                || (path.startsWith("/api/v1/members/") && path.endsWith("/preview-invite"));
     }
 }

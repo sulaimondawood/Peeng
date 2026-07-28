@@ -13,7 +13,6 @@ import com.dawood.peeng.identity.enums.Status;
 import com.dawood.peeng.identity.event.MemberInviteEvent;
 import com.dawood.peeng.identity.exceptions.UnauthorizedException;
 import com.dawood.peeng.identity.models.User;
-import com.dawood.peeng.identity.repository.EmailVerificationTokenRepository;
 import com.dawood.peeng.identity.repository.UserRepository;
 import com.dawood.peeng.membership.dtos.responses.MembershipDTO;
 import com.dawood.peeng.membership.enums.MembershipStatus;
@@ -51,7 +50,6 @@ public class TeamService {
     private final UserRepository userRepository;
     private final IdentityService identityService;
     private final MembershipRepository membershipRepository;
-    private final EmailVerificationTokenRepository tokenRepository;
     private final TenantRepository tenantRepository;
     private final RabbitTemplate rabbitTemplate;
     private final PasswordEncoder passwordEncoder;
@@ -88,8 +86,8 @@ public class TeamService {
         if (actorMembership.getRole() != RoleType.OWNER && actorMembership.getRole() != RoleType.ADMIN) {
             throw new UnauthorizedException(
                     "You're not authorized to perform this action",
-                    HttpStatus.UNAUTHORIZED,
-                    ErrorCode.UNAUTHORIZED);
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.FORBIDDEN);
         }
 
         Tenant tenant = tenantRepository.findById(tenantId)
@@ -190,8 +188,8 @@ public class TeamService {
         if (currentUsermembership.getRole() != RoleType.OWNER && currentUsermembership.getRole() != RoleType.ADMIN) {
             throw new UnauthorizedException(
                     "You're not authorized to perform this action",
-                    HttpStatus.UNAUTHORIZED,
-                    ErrorCode.UNAUTHORIZED);
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.FORBIDDEN);
         }
 
         Tenant tenant = tenantRepository.findById(tenantId)
@@ -270,23 +268,23 @@ public class TeamService {
         if(currentLoggedInUserMembership.getRole() != RoleType.OWNER && currentLoggedInUserMembership.getRole() !=RoleType.ADMIN){
             throw new UnauthorizedException(
                     "You're not authorized to perform this action",
-                    HttpStatus.UNAUTHORIZED,
-                    ErrorCode.UNAUTHORIZED);
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.FORBIDDEN);
         }
 
         if((currentLoggedInUserMembership.getRole() == RoleType.ADMIN && targetMembership.getRole() ==RoleType.ADMIN)
                 || (currentLoggedInUserMembership.getRole() == RoleType.ADMIN && targetMembership.getRole() ==RoleType.OWNER)){
             throw new UnauthorizedException(
                     "You're not authorized to perform this action",
-                    HttpStatus.UNAUTHORIZED,
-                    ErrorCode.UNAUTHORIZED);
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.FORBIDDEN);
         }
 
         if(currentLoggedInUserMembership.getRole() == RoleType.OWNER && targetMembership.getRole() ==RoleType.OWNER){
             throw new UnauthorizedException(
                     "You're not authorized to perform this action, kindly transfer ownership.",
-                    HttpStatus.UNAUTHORIZED,
-                    ErrorCode.UNAUTHORIZED);
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.FORBIDDEN);
         }
 
         if (targetMembership.getStatus() == MembershipStatus.INVITED) {
@@ -324,31 +322,31 @@ public class TeamService {
         if (currentLoggedInUserMembership.getRole() != RoleType.OWNER && currentLoggedInUserMembership.getRole() != RoleType.ADMIN) {
             throw new UnauthorizedException(
                     "You're not authorized to perform this action",
-                    HttpStatus.UNAUTHORIZED,
-                    ErrorCode.UNAUTHORIZED);
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.FORBIDDEN);
         }
 
         if (currentLoggedInUserMembership.getRole() == RoleType.ADMIN &&
                 (targetMembership.getRole() == RoleType.ADMIN || targetMembership.getRole() == RoleType.OWNER)) {
             throw new UnauthorizedException(
                     "You're not authorized to modify this operator's tier",
-                    HttpStatus.UNAUTHORIZED,
-                    ErrorCode.UNAUTHORIZED);
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.FORBIDDEN);
         }
 
         if (currentLoggedInUserMembership.getRole() == RoleType.ADMIN &&
                 (role.role() == RoleType.ADMIN || role.role() == RoleType.OWNER)) {
             throw new UnauthorizedException(
                     "Administrators cannot provision Admin or Owner administrative authorities",
-                    HttpStatus.UNAUTHORIZED,
-                    ErrorCode.UNAUTHORIZED);
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.FORBIDDEN);
         }
 
         if (currentLoggedInUserMembership.getRole() == RoleType.OWNER && targetMembership.getRole() == RoleType.OWNER) {
             throw new UnauthorizedException(
                     "You're not authorized to perform this action, kindly transfer ownership.",
-                    HttpStatus.UNAUTHORIZED,
-                    ErrorCode.UNAUTHORIZED);
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.FORBIDDEN);
         }
 
         targetMembership.setRole(role.role());

@@ -2,6 +2,7 @@ package com.dawood.peeng.messaging.consumers;
 
 import com.dawood.peeng.common.enums.ErrorCode;
 import com.dawood.peeng.identity.event.MemberInviteEvent;
+import com.dawood.peeng.identity.event.PasswordResetEmailEvent;
 import com.dawood.peeng.incident.events.IncidentAssignedEvent;
 import com.dawood.peeng.incident.exceptions.IncidentNotFoundException;
 import com.dawood.peeng.incident.models.Incident;
@@ -123,5 +124,35 @@ public class EmailConsumer {
             throw e;
         }
 
+    }
+
+    @RabbitListener(queues = RabbitMQConfig.PASSWORD_RESET_QUEUE)
+    public void consumePasswordResetEmail(PasswordResetEmailEvent event) {
+        log.info("Received password reset event for: {}", event.email());
+
+        try {
+            String resetLink = String.format(
+                    "%s/auth/reset?token=%s",
+                    clientUrl,
+                    event.token()
+            );
+
+            Context context = new Context();
+            context.setVariable("name", event.name());
+            context.setVariable("expiresIn", "30 minutes");
+            context.setVariable("resetLink", resetLink);
+
+
+            String body = templateEngine.process("password-reset", context);
+
+            emailService.send(
+                    event.email(),
+                    "Reset your password - Peeng",
+                    body
+            );
+        } catch (Exception e) {
+            log.error("Error sending password reset email to {}", event.email(), e);
+            throw e;
+        }
     }
 }

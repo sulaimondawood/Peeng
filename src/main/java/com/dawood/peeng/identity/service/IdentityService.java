@@ -1,18 +1,23 @@
 package com.dawood.peeng.identity.service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
+import com.dawood.peeng.common.exceptions.BadRequestException;
 import com.dawood.peeng.common.exceptions.PeengException;
+import com.dawood.peeng.configs.RabbitMQConfig;
+import com.dawood.peeng.identity.dtos.request.ForgotPasswordRequest;
+import com.dawood.peeng.identity.dtos.request.ResetPasswordRequest;
 import com.dawood.peeng.identity.dtos.response.VerifyEmailResponse;
+import com.dawood.peeng.identity.event.PasswordResetEmailEvent;
 import com.dawood.peeng.identity.exceptions.*;
+import com.dawood.peeng.identity.models.PasswordResetToken;
+import com.dawood.peeng.identity.repository.PasswordResetTokenRepository;
 import com.dawood.peeng.notification.enums.NotificationChannel;
 import com.dawood.peeng.notification.model.NotificationChannelConfig;
 import com.dawood.peeng.notification.respository.NotificationChannelConfigRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -62,6 +67,8 @@ public class IdentityService {
     private final EmailVerificationTokenRepository tokenRepository;
     private final JwtService jwtService;
     private final NotificationChannelConfigRepository notificationChannelConfigRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final RabbitTemplate rabbitTemplate;
 
     @Transactional
     public RegisterResponseDTO register(RegisterDTO payload) {
@@ -397,7 +404,121 @@ public class IdentityService {
 
     }
 
-    public void forgotPassword(){
-        
+    @Transactional
+    public void forgotPassword(ForgotPasswordRequest request) {
+        String email = request.email().trim().toLowerCase();
+
+        Optional<User> userOpt = userRepository.findByEmailIgnoreCase(email);
+        if (userOpt.isEmpty()) {
+            return;
+        }
+
+        User user = userOpt.get();
+
+        if (user.getStatus() == Status.DELETED || user.getStatus() == Status.SUSPENDED) {
+            return;
+        }
+
+
+        if (user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
+            return;
+        }
+
+        passwordResetTokenRepository.deleteByUserId(user.getId());
+
+        String tokenValue = UUID.randomUUID().toString();
+
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .token(tokenValue)
+                .user(user)
+                .expiresAt(LocalDateTime.now().plusMinutes(30))
+                .build();
+
+        passwordResetTokenRepository.save(resetToken);
+
+        final String tokenForEmail = tokenValue;
+        final String userEmail = user.getEmail();
+        final String userName = user.getName();
+
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                rabbitTemplate.convertAndSend(
+                        RabbitMQConfig.EXCHANGE,
+                        RabbitMQConfig.PASSWORD_RESET_ROUTING_KEY,
+                        new PasswordResetEmailEvent(userEmail, userName, tokenForEmail)
+                );
+            }
+        });
+
+
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        if (!request.newPassword().equals(request.confirmPassword())) {
+            throw new BadRequestException(
+                    "New password and confirm password do not match",
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.BAD_REQUEST
+            );
+        }
+
+        if (request.newPassword().length() < 8) {
+            throw new BadRequestException(
+                    "Password must be at least 8 characters",
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.BAD_REQUEST
+            );
+        }
+
+        PasswordResetToken resetToken = passwordResetTokenRepository
+                .findByToken(request.token().trim())
+                .orElseThrow(() -> new BadRequestException(
+                        "Invalid or expired reset link",
+                        HttpStatus.BAD_REQUEST,
+                        ErrorCode.BAD_REQUEST
+                ));
+
+        if (resetToken.isUsed()) {
+            throw new BadRequestException(
+                    "This reset link has already been used",
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.BAD_REQUEST
+            );
+        }
+
+        if (resetToken.isExpired()) {
+            passwordResetTokenRepository.delete(resetToken);
+            throw new BadRequestException(
+                    "This reset link has expired",
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.BAD_REQUEST
+            );
+        }
+
+        User user = resetToken.getUser();
+
+        if (user.getStatus() == Status.DELETED || user.getStatus() == Status.SUSPENDED) {
+            throw new BadRequestException(
+                    "Unable to reset password for this account",
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.BAD_REQUEST
+            );
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        user.setFailedLoginAttempts(0);
+        user.setAccountLockedUntil(null);
+        if (user.getStatus() == Status.LOCKED) {
+            user.setStatus(Status.ACTIVE);
+        }
+        userRepository.save(user);
+
+        resetToken.setUsedAt(LocalDateTime.now());
+        passwordResetTokenRepository.save(resetToken);
+
+        passwordResetTokenRepository.deleteByUserId(user.getId());
     }
 }

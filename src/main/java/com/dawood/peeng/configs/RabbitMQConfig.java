@@ -37,6 +37,10 @@ public class RabbitMQConfig {
     public static final String  INCIDENT_ASSIGNED_TO_QUEUE= "incident.assigned.queue";
     public static final String INCIDENT_ASSIGNED_TO_MEMBER_ROUTING_KEY="incident.assigned";
 
+    public static final String PASSWORD_RESET_ROUTING_KEY = "password.reset.key";
+    public static final String PASSWORD_RESET_QUEUE = "password.reset.queue";
+
+
 
     @Bean
     public TopicExchange topicExchange() {
@@ -158,6 +162,22 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(incidentAssignedQueue)
                 .to(topicExchange)
                 .with(RabbitMQConfig.INCIDENT_ASSIGNED_TO_MEMBER_ROUTING_KEY);
+    }
+
+    @Bean
+    public Queue passwordResetQueue(){
+        return QueueBuilder
+                .durable(PASSWORD_RESET_QUEUE)
+                .deadLetterExchange(DLX_EXCHANGE)
+                .deadLetterRoutingKey(DLX_ROUTING_KEY)
+                .build();
+    }
+
+    @Bean
+    public Binding passwordResetBinding(TopicExchange topicExchange, Queue passwordResetQueue){
+        return BindingBuilder.bind(passwordResetQueue)
+                .to(topicExchange)
+                .with(RabbitMQConfig.PASSWORD_RESET_ROUTING_KEY);
     }
 
 

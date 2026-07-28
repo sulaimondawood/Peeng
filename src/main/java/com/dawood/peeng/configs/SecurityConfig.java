@@ -34,8 +34,8 @@ public class SecurityConfig {
                     "/auth/register",
                     "/auth/verify-email",
                     "/auth/forgot-password",
-                    "/members/{token}/preview-invite",
-                    "/members/accept-invite"
+                    "/members/accept-invite",
+                    "/members/*/preview-invite"
                     ).permitAll()
             .anyRequest().authenticated())
         .build();
