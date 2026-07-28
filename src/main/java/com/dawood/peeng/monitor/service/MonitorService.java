@@ -44,6 +44,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -62,9 +63,11 @@ public class MonitorService {
 
         long intervalInSeconds = payload.getCalculatedIntervalSeconds();
 
-        if (intervalInSeconds < 60) {
+        long minimumFiveMinutesInSeconds = TimeUnit.MINUTES.toSeconds(5);
+
+        if (intervalInSeconds < minimumFiveMinutesInSeconds) {
             throw new BadRequestException(
-                    "Monitor interval cannot be less than 60 seconds",
+                    "Monitor interval cannot be less than 5 minutes",
                     HttpStatus.BAD_REQUEST,
                     ErrorCode.BAD_REQUEST
             );
