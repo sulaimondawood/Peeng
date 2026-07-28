@@ -36,6 +36,6 @@ public interface MonitorRepository extends JpaRepository<Monitor, UUID> {
 """)
   Page<Monitor> findAllMonitors(@Param("tenantId") UUID tenantId, @Param("status") MonitorStatus status, @Param("keyword") String keyword, Pageable pageable);
 
-  List<Monitor> findTop5ByTenantIdOrderByCreatedAtDesc(UUID tenantId);
+  List<Monitor> findTop5ByTenantIdAndLifecycleNotOrderByCreatedAtDesc(UUID tenantId, MonitorLifecycleStatus lifecycleStatus);
 
 }

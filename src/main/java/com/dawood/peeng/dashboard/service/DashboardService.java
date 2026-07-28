@@ -9,6 +9,7 @@ import com.dawood.peeng.incident.mapper.IncidentMapper;
 import com.dawood.peeng.incident.repository.IncidentActivityRepository;
 import com.dawood.peeng.incident.repository.IncidentRepository;
 import com.dawood.peeng.monitor.dtos.responses.MonitorResponseDTO;
+import com.dawood.peeng.monitor.enums.MonitorLifecycleStatus;
 import com.dawood.peeng.monitor.mapper.MonitorMapper;
 import com.dawood.peeng.monitor.repository.MonitorRepository;
 import com.dawood.peeng.tenant.context.TenantContext;
@@ -44,7 +45,7 @@ public class DashboardService {
 
     public List<MonitorResponseDTO> getRecentMonitors() {
         UUID tenantId = TenantContext.getTenantId();
-        return monitorRepository.findTop5ByTenantIdOrderByCreatedAtDesc(tenantId)
+        return monitorRepository.findTop5ByTenantIdAndLifecycleNotOrderByCreatedAtDesc(tenantId, MonitorLifecycleStatus.DELETED)
                 .stream()
                 .map(MonitorMapper::toDTO)
                 .toList();
