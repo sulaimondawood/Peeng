@@ -8,6 +8,9 @@ import com.dawood.peeng.identity.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.dawood.peeng.identity.models.EmailVerificationToken;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface EmailVerificationTokenRepository extends JpaRepository<EmailVerificationToken, UUID> {
 
@@ -18,4 +21,8 @@ public interface EmailVerificationTokenRepository extends JpaRepository<EmailVer
     Optional<EmailVerificationToken> findByUserAndExpiresAtAfter(User user, LocalDateTime expiresAtAfter);
 
     Optional<EmailVerificationToken> findByToken(String token);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("DELETE FROM EmailVerificationToken t WHERE t.user.id = :userId")
+    void deleteByUserId(@Param("userId") UUID userId);
 }

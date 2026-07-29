@@ -194,8 +194,12 @@ public class IdentityService {
         user.setLastLoginAt(LocalDateTime.now());
 
         if (!user.isEmailVerified()) {
-            throw new EmailNotVerifiedException("Email is not verified",
-                    HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED);
+            resendVerificationEmailForUser(user);
+            throw new EmailNotVerifiedException(
+                    "Email is not verified. A new verification link has been sent to your inbox.",
+                    HttpStatus.FORBIDDEN,
+                    ErrorCode.ACCESS_DENIED
+            );
         }
 
         List<Membership> activeMemberships = membershipRepository.findAllByUser_Id(user.getId()).stream()
@@ -521,4 +525,36 @@ public class IdentityService {
 
         passwordResetTokenRepository.deleteByUserId(user.getId());
     }
+
+    private void resendVerificationEmailForUser(User user) {
+
+        tokenRepository.deleteByUserId(user.getId());
+
+        String tokenValue = UUID.randomUUID().toString();
+
+        EmailVerificationToken token = EmailVerificationToken.builder()
+                .token(tokenValue)
+                .user(user)
+                .expiresAt(LocalDateTime.now().plusHours(24))
+                .build();
+
+        tokenRepository.save(token);
+
+        final String email = user.getEmail();
+        final String name = user.getName();
+
+        SendVerificationEmailEvent event = SendVerificationEmailEvent.builder()
+                .email(email)
+                .name(name)
+                .token(tokenValue)
+                .build();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                emailProducer.sendVerificationEmail(event);
+            }
+        });
+
+
+}
 }
